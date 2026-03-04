@@ -27,6 +27,7 @@ description: Dartを用いた堅牢で保守性の高いCLIツールを作成・
   - `logger.info()`, `logger.success()`, `logger.err()`, `logger.warn()` で色分けされた出力。
   - 時間のかかる処理には `logger.progress('Doing something...')` を用いてスピナーを表示。
   - ユーザーの確認（y/n）や文字入力には `logger.confirm()` や `logger.prompt()` を活用。
+  - **Tip:** 実用的な構成として、`lib/logger.dart` にトップレベルで `final logger = Logger();` と定義し、プロジェクト全体でimportして使うとボイラープレートが減り非常に便利です（DIを必須としない小〜中規模のCLIツールに最適）。
 - **`cli_completion`**: 可能な場合は、シェル補完機能を提供するパッケージの利用を検討します。
 
 ### 4. 正しいエラーハンドリングと終了の手法
@@ -37,7 +38,7 @@ description: Dartを用いた堅牢で保守性の高いCLIツールを作成・
 
 ### 5. 静的解析とコードフォーマット
 
-- **`pedantic_mono`の適用**: monoさんのプロジェクトでは`analysis_options.yaml`に`pedantic_mono`を設定し、厳格な静的解析ルールに従います。
+- **`pedantic_mono`の適用**: `analysis_options.yaml`に`pedantic_mono`を設定し、厳格な静的解析ルールに従います。
 - コード変更後は必ずエラー・警告をゼロにします。
 
 ### 6. 配布・実行のための設定
@@ -88,19 +89,26 @@ Future<void> flushThenExit(int status) async {
 }
 ```
 
+### `lib/logger.dart`
+
+```dart
+import 'package:mason_logger/mason_logger.dart';
+
+/// アプリケーション共通の [Logger]。
+final logger = Logger();
+```
+
 ### `lib/command_runner.dart`
 
 ```dart
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:mason_logger/mason_logger.dart';
+import 'package:my_cli/logger.dart';
 
 class MyCliCommandRunner extends CommandRunner<int> {
-  final Logger _logger;
-
-  MyCliCommandRunner({Logger? logger})
-      : _logger = logger ?? Logger(),
-        super('my_cli', 'A highly robust Dart CLI tool.') {
+  MyCliCommandRunner()
+      : super('my_cli', 'A highly robust Dart CLI tool.') {
     argParser
       ..addFlag(
         'version',
@@ -112,7 +120,7 @@ class MyCliCommandRunner extends CommandRunner<int> {
         'verbose',
         help: 'Enable verbose logging.',
       );
-    // TODO: addCommand(MyCustomCommand(logger: _logger));
+    // TODO: addCommand(MyCustomCommand());
   }
 
   @override
@@ -120,27 +128,27 @@ class MyCliCommandRunner extends CommandRunner<int> {
     try {
       final topLevelResults = parse(args);
       if (topLevelResults['verbose'] == true) {
-        _logger.level = Level.verbose;
+        logger.level = Level.verbose;
       }
       if (topLevelResults['version'] == true) {
-        _logger.info('my_cli version: 1.0.0');
+        logger.info('my_cli version: 1.0.0');
         return 0;
       }
       return await runCommand(topLevelResults);
     } on FormatException catch (e) {
-      _logger
+      logger
         ..err(e.message)
         ..info('')
         ..info(usage);
       return 64; // usage error
     } on UsageException catch (e) {
-      _logger
+      logger
         ..err(e.message)
         ..info('')
         ..info(usage);
       return 64;
     } catch (e, stackTrace) {
-      _logger
+      logger
         ..err('An unexpected error occurred: \$e')
         ..err('\$stackTrace');
       return 1;
@@ -153,10 +161,10 @@ class MyCliCommandRunner extends CommandRunner<int> {
 
 ```dart
 import 'package:args/command_runner.dart';
-import 'package:mason_logger/mason_logger.dart';
+import 'package:my_cli/logger.dart';
 
 class MyCustomCommand extends Command<int> {
-  MyCustomCommand({required Logger logger}) : _logger = logger {
+  MyCustomCommand() {
     argParser.addOption(
       'name',
       abbr: 'n',
@@ -164,8 +172,6 @@ class MyCustomCommand extends Command<int> {
       mandatory: true,
     );
   }
-
-  final Logger _logger;
 
   @override
   String get description => 'A custom command example.';
@@ -176,7 +182,7 @@ class MyCustomCommand extends Command<int> {
   @override
   Future<int> run() async {
     final name = argResults?['name'] as String?;
-    final progress = _logger.progress('Saying hello to \$name...');
+    final progress = logger.progress('Saying hello to \$name...');
 
     // 時間のかかる処理のシミュレート
     await Future<void>.delayed(const Duration(seconds: 1));
