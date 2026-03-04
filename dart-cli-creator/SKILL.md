@@ -1,5 +1,5 @@
 ---
-name: dart_cli_creator
+name: dart-cli-creator
 description: Dartを用いた堅牢で保守性の高いCLIツールを作成・改善するためのスキル。ベストプラクティスを網羅しています。
 ---
 
