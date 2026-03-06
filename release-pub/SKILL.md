@@ -24,6 +24,7 @@ Wait for the user to confirm this is done if it's a new setup.
 ### 1. Pre-release Checks
 
 - Check if there are any uncommitted changes: `git status -s`. If there are, tell the user to commit or stash them before proceeding.
+- **README / Docs Update Check**: Scan the recent changes. If there are new features or changed options, remind the user to check if `README.md` or other documentation needs updating before releasing.
 - Run `dart format .` and `dart analyze`. If there are errors, report them and ask the user to fix them.
 - **CRITICAL**: Run `dart pub publish --dry-run`. If warnings or errors appear (other than expected ones that can be ignored), report them and ask for user confirmation to proceed.
 
@@ -32,10 +33,14 @@ Wait for the user to confirm this is done if it's a new setup.
 - Find the last tag: `LAST_TAG=$(git tag --sort=-v:refname | head -1)`
 - Analyze the commits since the last tag: `git log ${LAST_TAG}..HEAD --oneline`
 - Determine the bump type (`major`, `minor`, `patch`) based on Conventional Commits:
-  - `BREAKING CHANGE` or `!:` -> major (or minor if version is `< 1.0.0` but follow the user's lead on pre-1.0.0 breaking changes).
+  - `BREAKING CHANGE:` or `<type>!:` -> major (or minor if version is `< 1.0.0` but follow the user's lead on pre-1.0.0 breaking changes).
   - `feat:` -> minor
-  - `fix:`, `docs:`, `chore:`, etc. -> patch
+  - `fix:`, `docs:`, `chore:`, `refactor:`, `perf:` etc. -> patch
 - Generate markdown for `CHANGELOG.md` notes describing the changes. Use Japanese for the notes (since the user likes Japanese communication, but keep the headers simple). _DO NOT include the `## [version] - [date]` title header in the notes as the script adds that automatically._
+- **Generate Preview (Dry-Run)**: Present a clear preview of the upcoming release to the user before making any file changes.
+  - Show the version bump recommendation (e.g., `1.2.3 -> 1.3.0 (Recommended: feat=minor)`) and offer other valid SemVer alternatives (e.g. `1.2.4`, `2.0.0`) in case they want a different bump.
+  - List the categorized commits that will be included in the release.
+  - Show the preview text of the upcoming `CHANGELOG.md` entry.
 
 ### 3. Execution using Helper Script
 
@@ -66,8 +71,12 @@ Use the bundled Dart CLI script to apply changes safely. The script is located a
 
 ### 4. User Confirmation
 
-Show the user the Git diff (`git diff`) and ask: "コミットしてリリース (v$NEW_VERSION) に進みますか？"
-Wait for explicit confirmation.
+Ask the user to confirm the prepared release based on the generated preview in Step 2:
+
+- First present the version change options (e.g., "1.3.0 (推奨)", "1.2.4", "2.0.0").
+- Once the user chooses the version, proceed to update the files locally via Step 3.
+- After running the execution helpers, show the user the Git diff (`git diff`) and ask: "コミットしてリリース (v$NEW_VERSION) に進みますか？"
+  Wait for explicit confirmation.
 
 ### 5. Git & GitHub Operations
 
@@ -81,6 +90,7 @@ Once the user confirms:
    ```bash
    git commit -m "chore: release v$NEW_VERSION"
    ```
+   _Note: Do NOT add a `Co-Authored-By` line. This is a release commit, not a code contribution._
 3. Tag:
    ```bash
    git tag v$NEW_VERSION
