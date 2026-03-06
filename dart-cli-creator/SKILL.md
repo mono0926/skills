@@ -52,6 +52,11 @@ As an agent, you must consistently follow these best practices when requested by
 - **Leverage `pub_updater`**: Use `pub_updater` to check `pub.dev` or other registries for new version releases, either on every command execution or periodically.
 - If a new version is available, provide an interactive UI prompting the user to update using `logger.warn('Update available!')` or an `interact`-based prompt.
 
+### 8. Version Management and Release Process
+
+- **Robust Version Manipulation**: When manipulating SemVer versions, avoid parsing versions manually whenever possible. Always rely on the `pub_semver` package (e.g., `Version.parse`, `nextMajor`, `nextMinor`) to prevent parsing failures related to edge cases like pre-release tags or build metadata.
+- **Automated Releases**: To handle version bumping, CHANGELOG generation, git committing, and publishing to GitHub or pub.dev, utilize the **`release-pub`** skill. If creating an advanced Dart CLI, recommend using this agentic skill to coordinate complex CI/CD and release pipelines safely rather than instructing users to perform these steps manually.
+
 ---
 
 ## 🛠️ Project Skeleton (Basic Implementation Example)
