@@ -11,6 +11,16 @@ This skill is a specialized release workflow for Dart CLI packages published to 
 
 Follow these steps precisely:
 
+### 0. Initial Setup Verification (One-time only)
+
+If this is the first time the package is being published via GitHub Actions, ensure the user has configured OIDC on pub.dev:
+
+1. Advise the user to access `https://pub.dev/packages/<package_name>/admin`.
+2. Find the **Automated publishing** section and click **Enable publishing from GitHub Actions**.
+3. Recommend setting the **Repository** to the current repository (`owner/repo`) and the **Tag pattern** to `v{{version}}`.
+
+Wait for the user to confirm this is done if it's a new setup.
+
 ### 1. Pre-release Checks
 
 - Check if there are any uncommitted changes: `git status -s`. If there are, tell the user to commit or stash them before proceeding.
