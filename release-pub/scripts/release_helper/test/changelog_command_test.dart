@@ -79,7 +79,9 @@ void main() {
       expect(content, isNot(contains('Should be skipped.')));
     });
 
-    test('overwrites (prepends) with force if version already exists', () async {
+    test(
+      'overwrites (prepends) with force if version already exists',
+      () async {
       final changelogFile = File('${tempDir.path}/CHANGELOG.md');
       await changelogFile.writeAsString(
         '## 1.0.0 - 2026-03-01\n\nInitial release.\n',
@@ -98,7 +100,8 @@ void main() {
       expect(result, equals(0));
       final content = await changelogFile.readAsString();
       expect(content, contains('Overwritten notes.'));
-      // Note: current implementation prepends anyway if forced, so you'll have two entries.
+      // Note: current implementation prepends anyway if forced, so you'll have
+      // two entries.
       // But the check is mainly to prevent accidental duplicates.
     });
   });
