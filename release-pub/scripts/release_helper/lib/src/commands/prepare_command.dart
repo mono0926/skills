@@ -78,8 +78,8 @@ class PrepareCommand extends Command<int> {
       } else {
         nextVersion = Version.parse(bumpTypeOrVersion);
       }
-    } catch (e) {
-      logger.err('Invalid version or bump type: $bumpTypeOrVersion');
+    } on FormatException catch (e) {
+      logger.err('Invalid version or bump type: $bumpTypeOrVersion ($e)');
       return 1;
     }
 
@@ -101,10 +101,11 @@ class PrepareCommand extends Command<int> {
 
     // 3. Execution
     if (isDryRun) {
-      logger.info('--- Dry Run ---');
-      logger.info('Pubspec: $currentVersion -> $nextVersion');
-      logger.info('Changelog: Adding entry for $nextVersion');
-      logger.info('Notes:\n$formattedNotes');
+      logger
+        ..info('--- Dry Run ---')
+        ..info('Pubspec: $currentVersion -> $nextVersion')
+        ..info('Changelog: Adding entry for $nextVersion')
+        ..info('Notes:\n$formattedNotes');
     } else {
       // Update pubspec
       editor.update(['version'], nextVersion.toString());
@@ -113,9 +114,10 @@ class PrepareCommand extends Command<int> {
       // Update changelog
       changelogFile.writeAsStringSync(newChangelogContent);
 
-      logger.success('Successfully prepared release $nextVersion');
-      logger.info('- Updated $pubspecPath');
-      logger.info('- Updated $changelogPath');
+      logger
+        ..success('Successfully prepared release $nextVersion')
+        ..info('- Updated $pubspecPath')
+        ..info('- Updated $changelogPath');
     }
 
     return 0;
