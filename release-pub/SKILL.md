@@ -56,21 +56,11 @@ Wait for the user to confirm this is done if it's a new setup.
 
 Use the bundled Dart CLI script to apply changes safely. The script is located at `.agents/skills/release-pub/scripts/release_helper`.
 
-1. **Bump Version**:
+1. **Prepare Release (Version Bump & Changelog)**:
+   Determine the bump type (`major`, `minor`, `patch`) and the notes as analyzed in Step 2.
 
    ```bash
-   dart run .agents/skills/release-pub/scripts/release_helper/bin/release_helper.dart bump <type>
-   ```
-
-   (Replace `<type>` with `major`, `minor`, or `patch`).
-
-2. **Extract New Version**:
-   Read the `pubspec.yaml` to find the newly bumped version string (e.g. `1.2.3`). Let's call this `$NEW_VERSION`.
-
-3. **Update Changelog**:
-
-   ```bash
-   dart run .agents/skills/release-pub/scripts/release_helper/bin/release_helper.dart changelog $NEW_VERSION --notes "
+   dart run .agents/skills/release-pub/scripts/release_helper/bin/release_helper.dart prepare <type> --notes "
    ### Features
    - ...
 
@@ -78,6 +68,9 @@ Use the bundled Dart CLI script to apply changes safely. The script is located a
    - ...
    "
    ```
+
+2. **Extract New Version**:
+   Read the `pubspec.yaml` to find the newly updated version string (e.g. `1.2.3`). Let's call this `$NEW_VERSION`.
 
 ### 4. User Confirmation
 

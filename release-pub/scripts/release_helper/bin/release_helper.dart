@@ -3,9 +3,9 @@
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
-
 import 'package:release_helper/src/commands/bump_command.dart';
 import 'package:release_helper/src/commands/changelog_command.dart';
+import 'package:release_helper/src/commands/prepare_command.dart';
 import 'package:release_helper/src/logger.dart';
 
 Future<void> main(List<String> arguments) async {
@@ -15,7 +15,8 @@ Future<void> main(List<String> arguments) async {
           'A helper CLI tool for release-pub AI skill.',
         )
         ..addCommand(BumpCommand())
-        ..addCommand(ChangelogCommand());
+        ..addCommand(ChangelogCommand())
+        ..addCommand(PrepareCommand());
 
   try {
     final exitCode = await runner.run(arguments);
