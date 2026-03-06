@@ -1,11 +1,11 @@
 ---
 name: release-pub
-description: A specialized workflow for releasing Dart CLI packages to pub.dev. Use when the user asks to "release", "publish to pub.dev", or "create a release" for a Dart project.
+description: A specialized workflow for releasing Dart and Flutter packages to pub.dev. Use when the user asks to "release", "publish to pub.dev", or "create a release" for a Dart/Flutter project.
 ---
 
 # `release-pub` Skill
 
-This skill is a specialized release workflow for Dart CLI packages published to pub.dev. It relies on a local helper script (`release_helper`) to safely manipulate `pubspec.yaml` and `CHANGELOG.md`.
+This skill is a specialized release workflow for Dart and Flutter packages published to pub.dev (including Dart CLI tools). It relies on a local helper script (`release_helper`) to safely manipulate `pubspec.yaml` and `CHANGELOG.md`.
 
 ## Workflow Overview
 
@@ -25,8 +25,14 @@ Wait for the user to confirm this is done if it's a new setup.
 
 - Check if there are any uncommitted changes: `git status -s`. If there are, tell the user to commit or stash them before proceeding.
 - **README / Docs Update Check**: Scan the recent changes. If there are new features or changed options, remind the user to check if `README.md` or other documentation needs updating before releasing.
-- Run `dart format .` and `dart analyze`. If there are errors, report them and ask the user to fix them.
-- **CRITICAL**: Run `dart pub publish --dry-run`. If warnings or errors appear (other than expected ones that can be ignored), report them and ask for user confirmation to proceed.
+- Run the appropriate formatter and analyzer based on the project type:
+  - For Dart packages: `dart format .` and `dart analyze`
+  - For Flutter packages: `flutter format .` (or `dart format .`) and `flutter analyze`
+    If there are errors, report them and ask the user to fix them.
+- **CRITICAL**: Run the pre-publish dry-run:
+  - For Dart packages: `dart pub publish --dry-run`
+  - For Flutter packages: `flutter pub publish --dry-run`
+    If warnings or errors appear (other than expected ones that can be ignored), report them and ask for user confirmation to proceed.
 
 ### 2. Analyze Changes & Plan Release
 
