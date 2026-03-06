@@ -62,7 +62,7 @@ When creating a CLI, use a structure and implementation similar to the following
 
 ```yaml
 environment:
-  sdk: ^3.4.0
+  sdk: ^3.11.0 # Always specify the latest stable version
 
 dependencies:
   args: ^2.5.0
@@ -248,7 +248,7 @@ class MyCustomCommand extends Command<int> {
 
 When requested by the user to "create a CLI tool for doing X", etc.:
 
-1. Follow the contents of this skill to structure a project centered around `args` and `mason_logger`.
+1. Follow the contents of this skill to structure a project centered around `args` and `mason_logger`. Always specify the latest stable Dart SDK version (where the patch version is 0, e.g., `^3.11.0`) in `pubspec.yaml`.
 2. Determine the directory structure and orchestrate/propose a set of commands based on the requirements.
 3. Introduce `pedantic_mono` and generate high-quality code that adheres to strict static analysis.
 4. (If necessary) After development is complete, document the usage instructions in `README.md` and present the user with installation steps, such as using `dart pub global activate --source path .`.
