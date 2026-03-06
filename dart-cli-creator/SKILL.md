@@ -1,66 +1,69 @@
 ---
 name: dart-cli-creator
-description: Dartを用いた堅牢で保守性の高いCLIツールを作成・改善するためのスキル。ベストプラクティスを網羅しています。
+description: A skill for creating and improving robust, highly maintainable CLI tools using Dart. It covers comprehensive best practices.
 ---
 
 # Dart CLI Creator Skill
 
-このスキルは、Dartを用いて最高品質のCommand-Line Interface (CLI) ツールを作成・改善するためのガイドラインと手順です。
-あなた(エージェント)は、ユーザーからDart CLIの作成・改修を依頼された際、常にこのベストプラクティスに従って作業を進めてください。
+This skill provides guidelines and procedures for creating and improving top-quality Command-Line Interface (CLI) tools using Dart.
+As an agent, you must consistently follow these best practices when requested by the user to create or modify a Dart CLI.
 
-## 🎯 コア・ベストプラクティス
+## 🎯 Core Best Practices
 
-### 1. プロジェクト構造・設計
+### 1. Project Structure and Design
 
-- **`bin/`ディレクトリ**: CLIのエントリポイントとなる実行ファイル（例: `bin/my_cli.dart`）を配置します。ここには複雑なロジックは書かず、`lib/`または`src/`のトップレベル関数やクラスを呼び出すだけの薄いラッパーにします。
-- **`lib/`ディレクトリ**: ビジネスロジック、コマンドの実装、再利用可能なユーティリティを配置します（例: `lib/src/commands/`、`lib/src/utils/`）。
-- **責務の分離**: CLIの入出力部分（引数のパースやUI描画）とコアなビジネスロジックは必ず分離し、テスタビリティを高めます。
+- **`bin/` directory**: Place the entry point executable files for the CLI (e.g., `bin/my_cli.dart`). Keep this as a thin wrapper that only calls top-level functions or classes from `lib/` or `src/`, avoiding complex logic here.
+- **`lib/` directory**: Place business logic, command implementations, and reusable utilities here (e.g., `lib/src/commands/`, `lib/src/utils/`).
+- **Separation of Concerns**: Always separate the CLI input/output handling (argument parsing, UI rendering) from the core business logic to maximize testability.
 
-### 2. コマンドライン引数とコマンドルーティング
+### 2. Command-Line Arguments and Routing
 
-- **`args`パッケージを活用**: 標準の`args`パッケージにある`CommandRunner`と`Command`クラスを使用して、Gitライクなサブコマンド対応のCLIを構築します。
-- **自己文書化**: 各コマンドやフラグ・オプションには`description`や`help`を丁寧に記述し、`--help`で十分な使い方が表示されるようにします。
+- **Leverage the `args` package**: Use `CommandRunner` and `Command` classes from the standard `args` package to build a Git-like CLI with subcommands.
+- **Self-documenting**: Carefully write `description` and `help` for each command, flag, and option, ensuring that `--help` provides sufficient usage information.
 
-### 3. リッチなUX (ユーザー体験) とロギング
+### 3. Rich UX (User Experience) and Logging
 
-- **`mason_logger`の積極利用**: 標準の`print`は避け、`mason_logger`パッケージを利用します。
-  - `logger.info()`, `logger.success()`, `logger.err()`, `logger.warn()` で色分けされた出力。
-  - 時間のかかる処理には `logger.progress('Doing something...')` を用いてスピナーを表示。
-  - ユーザーの確認（y/n）や文字入力には `logger.confirm()` や `logger.prompt()` を活用。また、より高度なメニュー選択やスピナー等が必要な場合は `interact` パッケージを併用します。
-  - **Tip:** 実用的な構成として、`lib/logger.dart` にトップレベルで `final logger = Logger();` と定義し、プロジェクト全体でimportして使うとボイラープレートが減り非常に便利です（DIを必須としない小〜中規模のCLIツールに最適）。
-- **`cli_completion`**: シェル補完機能を提供するために、`cli_completion` パッケージの利用を検討し、`CompletionCommandRunner` を継承して実装します。
+- **Actively use `mason_logger`**: Avoid standard `print` statements; use the `mason_logger` package instead.
+  - Output color-coded messages with `logger.info()`, `logger.success()`, `logger.err()`, and `logger.warn()`.
+  - Display a spinner for time-consuming tasks using `logger.progress('Doing something...')`.
+  - Utilize `logger.confirm()` or `logger.prompt()` for user confirmations (y/n) or text input. If more advanced menu selections or spinners are needed, combine it with the `interact` package.
+  - **Tip:** For a practical setup, define `final logger = Logger();` at the top level in `lib/logger.dart` and import it across the project. This reduces boilerplate and is highly convenient (ideal for small to medium-sized CLI tools where DI is not mandatory).
+- **`cli_completion`**: Consider using the `cli_completion` package to provide shell completion features by extending `CompletionCommandRunner`.
 
-### 4. 正しいエラーハンドリングと終了の手法
+### 4. Proper Error Handling and Exit Strategies
 
-- **終了コード(Exit Code)**: 処理結果は必ず適切な終了コードとして扱います（成功時は `0`、エラー時は `1` または `sysexits` 準拠のエラーコード等）。
-- **直接の `exit()` は避ける**: `exit()`を直接呼ぶと、Dart VMが即座に強制終了し、リソースのクリーンアップ(`finally`ブロックなど)が実行されない可能性があります。`CommandRunner.run()`の戻り値として`int`を返し、`main`関数に伝播させ、`exitCode`プロパティにセットして自然終了(`Process.stdout.close()`等の待機後)させます。
-- **カスタム例外クラスの定義とハンドリング**: 独自ドメインの例外クラス（例: `AppException`）を定義し、深い階層でスローします。
-- **グローバルな例外捕捉**: `CommandRunner`の実行全体を`try-catch`で囲み、`AppException`, `UsageException` や未補足例外をハンドリングします。スタックトレースをユーザーに直接見せるのではなく、`logger.err(e.message)` のように丁寧にエラー出力し、適切な終了コードを返します。
+- **Exit Code**: Always treat the result of the process as an appropriate exit code (`0` for success, `1` or `sysexits`-compliant error codes for errors).
+- **Avoid direct `exit()` calls**: Calling `exit()` directly causes the Dart VM to terminate immediately, potentially bypassing resource cleanup (like `finally` blocks). Instead, return an `int` from `CommandRunner.run()`, propagate it to the `main` function, set it to the `exitCode` property, and allow the process to exit naturally (e.g., after waiting for `Process.stdout.close()`).
+- **Custom Exception Classes and Handling**: Define custom domain-specific exception classes (e.g., `AppException`) and throw them from deep within the call stack.
+- **Global Exception Catching**: Wrap the entire execution of `CommandRunner` in a `try-catch` block to handle `AppException`, `UsageException`, and any uncaught exceptions. Rather than showing stack traces directly to the user, output errors gracefully using `logger.err(e.message)` and return an appropriate exit code.
 
-### 5. 静的解析とコードフォーマット
+### 5. Static Analysis and Code Formatting
 
-- **`pedantic_mono`の適用**: `analysis_options.yaml`に`pedantic_mono`を設定し、厳格な静的解析ルールに従います。
-- コード変更後は必ずエラー・警告をゼロにします。
+- **Apply `pedantic_mono`**: Configure `pedantic_mono` in `analysis_options.yaml` and adhere to strict static analysis rules.
+- Always resolve all errors and warnings after making code changes, ensuring a clean slate.
 
-### 6. 配布・実行のための設定
+### 6. Distribution and Execution Configuration
 
-- **Shebang**: `bin/`直下の実行ファイルの1行目には、必ず `#!/usr/bin/env dart` を記述します。
-- **Pubspecの設定**: `pubspec.yaml`の`executables:`セクションでCLIコマンド名を定義し、`dart pub global activate`で簡単にインストールできるようにします。
+- **Shebang**: Always include `#!/usr/bin/env dart` as the very first line of executable files directly under `bin/`.
+- **Pubspec Configuration**: Define the CLI command name in the `executables:` section of `pubspec.yaml` to enable easy installation via `dart pub global activate`.
 
-### 7. アップデート通知機能 (Auto-update check)
+### 7. Auto-Update Check Feature
 
-- **`pub_updater` を活用**: コマンド実行の都度または定期的に `pub_updater` を用いて、`pub.dev` 等に新しいバージョンがリリースされていないかチェックします。
-- 新バージョンがある場合は、`logger.warn('Update available!')` や、`interact` ベースのプロンプトで更新を促すインタラクティブなUIを提供します。
+- **Leverage `pub_updater`**: Use `pub_updater` to check `pub.dev` or other registries for new version releases, either on every command execution or periodically.
+- If a new version is available, provide an interactive UI prompting the user to update using `logger.warn('Update available!')` or an `interact`-based prompt.
 
 ---
 
-## 🛠️ プロジェクトのスケルトン(基本実装例)
+## 🛠️ Project Skeleton (Basic Implementation Example)
 
-CLIを作成する際は、以下のような構造と実装をベースにします。
+When creating a CLI, use a structure and implementation similar to the following as a foundation.
 
-### `pubspec.yaml` の一部
+### Excerpt from `pubspec.yaml`
 
 ```yaml
+environment:
+  sdk: ^3.4.0
+
 dependencies:
   args: ^2.5.0
   cli_completion: ^0.4.0
@@ -80,6 +83,7 @@ executables:
 ```dart
 #!/usr/bin/env dart
 import 'dart:io';
+
 import 'package:my_cli/command_runner.dart';
 
 Future<void> main(List<String> arguments) async {
@@ -87,7 +91,7 @@ Future<void> main(List<String> arguments) async {
   await flushThenExit(exitCode ?? 0);
 }
 
-/// [status]をexitCodeに設定し、標準出力/標準エラーのフラッシュを待って終了するヘルパー
+/// Helper method to set the [status] to exitCode, and wait for the standard output/error to flush before exiting
 Future<void> flushThenExit(int status) async {
   exitCode = status;
   await Future.wait<void>([
@@ -102,7 +106,7 @@ Future<void> flushThenExit(int status) async {
 ```dart
 import 'package:mason_logger/mason_logger.dart';
 
-/// アプリケーション共通の [Logger]。
+/// The [Logger] shared across the application.
 final logger = Logger();
 ```
 
@@ -112,12 +116,10 @@ final logger = Logger();
 import 'package:args/args.dart';
 import 'package:cli_completion/cli_completion.dart';
 import 'package:mason_logger/mason_logger.dart';
-import 'package:pub_updater/pub_updater.dart';
 import 'package:my_cli/logger.dart';
+import 'package:pub_updater/pub_updater.dart';
 
 class MyCliCommandRunner extends CompletionCommandRunner<int> {
-  final PubUpdater _pubUpdater;
-
   MyCliCommandRunner({PubUpdater? pubUpdater})
       : _pubUpdater = pubUpdater ?? PubUpdater(),
         super('my_cli', 'A highly robust Dart CLI tool.') {
@@ -135,11 +137,13 @@ class MyCliCommandRunner extends CompletionCommandRunner<int> {
     // TODO: addCommand(MyCustomCommand());
   }
 
+  final PubUpdater _pubUpdater;
+
   Future<void> _checkForUpdates() async {
     try {
       final isUpToDate = await _pubUpdater.isUpToDate(
         packageName: 'my_cli',
-        currentVersion: '1.0.0', // 本来は packageVersion
+        currentVersion: '1.0.0', // Optionally link to a packageVersion constant
       );
       if (!isUpToDate) {
         final latestVersion = await _pubUpdater.getLatestVersion('my_cli');
@@ -156,7 +160,7 @@ class MyCliCommandRunner extends CompletionCommandRunner<int> {
         logger.level = Level.verbose;
       }
 
-      // バージョン更新チェック (非同期でバックグラウンド実行も検討)
+      // Check for version updates (consider asynchronous background execution)
       await _checkForUpdates();
 
       return await runCommand(argResults) ?? 0;
@@ -173,7 +177,7 @@ class MyCliCommandRunner extends CompletionCommandRunner<int> {
         ..info(usage);
       return 64;
     } on AppException catch (e) {
-      // カスタム例外はきれいにエラー出力
+      // Gracefully output custom domain exceptions
       logger.err(e.message);
       return 1;
     } catch (e, stackTrace) {
@@ -194,10 +198,11 @@ class MyCliCommandRunner extends CompletionCommandRunner<int> {
   }
 }
 
-/// ドメイン固有のカスタム例外
+/// A custom exception specific to the domain.
 class AppException implements Exception {
   const AppException(this.message);
   final String message;
+
   @override
   String toString() => message;
 }
@@ -228,22 +233,22 @@ class MyCustomCommand extends Command<int> {
   @override
   Future<int> run() async {
     final name = argResults?['name'] as String?;
-    final progress = logger.progress('Saying hello to \$name...');
+    final progress = logger.progress('Saying hello to $name...');
 
-    // 時間のかかる処理のシミュレート
+    // Simulate a time-consuming task
     await Future<void>.delayed(const Duration(seconds: 1));
 
-    progress.complete('Hello, \$name!');
+    progress.complete('Hello, $name!');
     return 0; // Success
   }
 }
 ```
 
-## 🤖 エージェントへの指示
+## 🤖 Instructions for the Agent
 
-ユーザーから「〇〇をするツールのCLIを作って」等と依頼された場合:
+When requested by the user to "create a CLI tool for doing X", etc.:
 
-1. このスキルの内容に沿って、`args`と`mason_logger`を軸としたプロジェクトを構成してください。
-2. ディレクトリ構成を決定し、要件定義に基づくコマンド群を整理・提案してください。
-3. `pedantic_mono`を導入し、厳格な静的解析を前提とした高品質なコードを生成してください。
-4. (必要なら) 開発完了後に、`README.md` にCLIの使い方( Usage )を記載し、`dart pub global activate --source path .`によるインストール手順などをユーザーに提示してください。
+1. Follow the contents of this skill to structure a project centered around `args` and `mason_logger`.
+2. Determine the directory structure and orchestrate/propose a set of commands based on the requirements.
+3. Introduce `pedantic_mono` and generate high-quality code that adheres to strict static analysis.
+4. (If necessary) After development is complete, document the usage instructions in `README.md` and present the user with installation steps, such as using `dart pub global activate --source path .`.
