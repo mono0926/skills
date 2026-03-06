@@ -40,7 +40,7 @@ As an agent, you must consistently follow these best practices when requested by
 ### 5. Static Analysis and Code Formatting
 
 - **Apply `pedantic_mono`**: Configure `pedantic_mono` in `analysis_options.yaml` and adhere to strict static analysis rules.
-- Always resolve all errors and warnings after making code changes, ensuring a clean slate.
+- **[ZERO TOLERANCE]**: Always resolve **ALL** errors, warnings, and **info** level lints immediately after making code changes. A "clean" analysis is mandatory for a project to be considered in a healthy state.
 
 ### 6. Distribution and Execution Configuration
 

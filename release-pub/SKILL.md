@@ -25,10 +25,11 @@ Wait for the user to confirm this is done if it's a new setup.
 
 - Check if there are any uncommitted changes: `git status -s`. If there are, tell the user to commit or stash them before proceeding.
 - **README / Docs Update Check**: Scan the recent changes. If there are new features or changed options, remind the user to check if `README.md` or other documentation needs updating before releasing.
-- Run the appropriate formatter, analyzer, and tests based on the project type:
+- **CRITICAL**: Run the appropriate formatter, analyzer, and tests based on the project type:
   - For Dart packages: `dart format .`, `dart analyze`, and `dart test`
   - For Flutter packages: `flutter format .` (or `dart format .`), `flutter analyze`, and `flutter test`
-    If there are errors, report them and ask the user to fix them.
+    - **[MANDATORY]**: Resolve **ALL** analyzer issues (errors, warnings, and **info** level lints) before proceeding. Do not ignore "info" level issues unless they are explicitly documented as unavoidable.
+    - If there are unresolved issues, report them and ask the user to fix them (or offer to fix them if they are straightforward).
 - **CRITICAL**: Run the pre-publish dry-run:
   - For Dart packages: `dart pub publish --dry-run`
   - For Flutter packages: `flutter pub publish --dry-run`
