@@ -17,6 +17,12 @@ class ChangelogCommand extends Command<int> {
         abbr: 'n',
         help: 'The markdown notes to add, without the title header',
         mandatory: true,
+      )
+      ..addFlag(
+        'force',
+        abbr: 'F',
+        help: 'Force update even if the version header already exists.',
+        negatable: false,
       );
   }
 
@@ -53,6 +59,13 @@ class ChangelogCommand extends Command<int> {
         '${today.day.toString().padLeft(2, '0')}';
 
     final header = '## $version - $dateStr\n\n';
+
+    final isForce = argResults?['force'] as bool;
+
+    if (originalContent.contains('## $version -') && !isForce) {
+      logger.warn('Version $version already exists in $filePath. Skipping.');
+      return 0;
+    }
 
     // Some basic formatting to ensure spacing
     final formattedNotes = notes.trim().isEmpty ? '' : '${notes.trim()}\n\n';

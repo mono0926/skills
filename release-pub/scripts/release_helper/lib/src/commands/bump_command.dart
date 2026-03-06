@@ -7,12 +7,19 @@ import 'package:yaml_edit/yaml_edit.dart';
 
 class BumpCommand extends Command<int> {
   BumpCommand() {
-    argParser.addOption(
-      'file',
-      abbr: 'f',
-      help: 'The path to pubspec.yaml',
-      defaultsTo: 'pubspec.yaml',
-    );
+    argParser
+      ..addOption(
+        'file',
+        abbr: 'f',
+        help: 'The path to pubspec.yaml',
+        defaultsTo: 'pubspec.yaml',
+      )
+      ..addFlag(
+        'dry-run',
+        abbr: 'n',
+        help: 'Show what would be changed without writing to the file.',
+        negatable: false,
+      );
   }
 
   @override
@@ -58,10 +65,16 @@ class BumpCommand extends Command<int> {
       nextVersion = Version.parse(bumpTypeOrVersion);
     }
 
-    editor.update(['version'], nextVersion.toString());
-    file.writeAsStringSync(editor.toString());
-
-    logger.success('Bumped version from $currentVersion to $nextVersion');
+    final isDryRun = argResults?['dry-run'] as bool;
+    if (isDryRun) {
+      logger.info(
+        'Dry run: bumped version from $currentVersion to $nextVersion',
+      );
+    } else {
+      editor.update(['version'], nextVersion.toString());
+      file.writeAsStringSync(editor.toString());
+      logger.success('Bumped version from $currentVersion to $nextVersion');
+    }
     return 0;
   }
 }

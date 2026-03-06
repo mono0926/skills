@@ -1,0 +1,38 @@
+name: release_helper CI
+
+on:
+    push:
+        branches: [main]
+        paths:
+            - "release-pub/scripts/release_helper/**"
+    pull_request:
+        branches: [main]
+        paths:
+            - "release-pub/scripts/release_helper/**"
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: dart-lang/setup-dart@v1
+              with:
+                  sdk: stable
+
+            - name: Install dependencies
+              run: dart pub get
+              working-directory: release-pub/scripts/release_helper
+
+            - name: Verify formatting
+              run: dart format --output=none --set-exit-if-changed .
+              working-directory: release-pub/scripts/release_helper
+
+            - name: Analyze project source
+              run: dart analyze --fatal-infos
+              working-directory: release-pub/scripts/release_helper
+
+            - name: Run tests
+              run: dart test
+              working-directory: release-pub/scripts/release_helper

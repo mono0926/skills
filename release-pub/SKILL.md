@@ -25,9 +25,9 @@ Wait for the user to confirm this is done if it's a new setup.
 
 - Check if there are any uncommitted changes: `git status -s`. If there are, tell the user to commit or stash them before proceeding.
 - **README / Docs Update Check**: Scan the recent changes. If there are new features or changed options, remind the user to check if `README.md` or other documentation needs updating before releasing.
-- Run the appropriate formatter and analyzer based on the project type:
-  - For Dart packages: `dart format .` and `dart analyze`
-  - For Flutter packages: `flutter format .` (or `dart format .`) and `flutter analyze`
+- Run the appropriate formatter, analyzer, and tests based on the project type:
+  - For Dart packages: `dart format .`, `dart analyze`, and `dart test`
+  - For Flutter packages: `flutter format .` (or `dart format .`), `flutter analyze`, and `flutter test`
     If there are errors, report them and ask the user to fix them.
 - **CRITICAL**: Run the pre-publish dry-run:
   - For Dart packages: `dart pub publish --dry-run`
@@ -38,6 +38,10 @@ Wait for the user to confirm this is done if it's a new setup.
 
 - Find the last tag: `LAST_TAG=$(git tag --sort=-v:refname | head -1)`
 - Analyze the commits since the last tag: `git log ${LAST_TAG}..HEAD --oneline`
+- Determine if a tag prefix is used:
+  - Check the format of the `$LAST_TAG`. If it starts with `v` (e.g., `v1.2.3`), use `v` as the prefix for the new tag.
+  - If no tags exist (first release), default to using the `v` prefix (`TAG_PREFIX="v"`).
+  - Otherwise, follow the existing pattern (no prefix if `$LAST_TAG` is just a version string).
 - Determine the bump type (`major`, `minor`, `patch`) based on Conventional Commits:
   - `BREAKING CHANGE:` or `<type>!:` -> major (or minor if version is `< 1.0.0` but follow the user's lead on pre-1.0.0 breaking changes).
   - `feat:` -> minor
@@ -99,17 +103,17 @@ Once the user confirms:
    _Note: Do NOT add a `Co-Authored-By` line. This is a release commit, not a code contribution._
 3. Tag:
    ```bash
-   git tag v$NEW_VERSION
+   git tag ${TAG_PREFIX}$NEW_VERSION
    ```
 4. Push:
    ```bash
    git push origin main
-   git push origin v$NEW_VERSION
+   git push origin ${TAG_PREFIX}$NEW_VERSION
    ```
 5. Create GitHub Release:
    Save the notes to a temporary file, e.g., `/tmp/release_notes.md`, then:
    ```bash
-   gh release create v$NEW_VERSION --title "v$NEW_VERSION" --notes-file /tmp/release_notes.md
+   gh release create ${TAG_PREFIX}$NEW_VERSION --title "${TAG_PREFIX}$NEW_VERSION" --notes-file /tmp/release_notes.md
    rm /tmp/release_notes.md
    ```
 
