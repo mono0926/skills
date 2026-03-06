@@ -42,7 +42,7 @@ Wait for the user to confirm this is done if it's a new setup.
   - `BREAKING CHANGE:` or `<type>!:` -> major (or minor if version is `< 1.0.0` but follow the user's lead on pre-1.0.0 breaking changes).
   - `feat:` -> minor
   - `fix:`, `docs:`, `chore:`, `refactor:`, `perf:` etc. -> patch
-- Generate markdown for `CHANGELOG.md` notes describing the changes. Use Japanese for the notes (since the user likes Japanese communication, but keep the headers simple). _DO NOT include the `## [version] - [date]` title header in the notes as the script adds that automatically._
+- Generate markdown for `CHANGELOG.md` notes describing the changes. Generate the notes entirely in **English**. _DO NOT include the `## [version] - [date]` title header in the notes as the script adds that automatically._
 - **Generate Preview (Dry-Run)**: Present a clear preview of the upcoming release to the user before making any file changes.
   - Show the version bump recommendation (e.g., `1.2.3 -> 1.3.0 (Recommended: feat=minor)`) and offer other valid SemVer alternatives (e.g. `1.2.4`, `2.0.0`) in case they want a different bump.
   - List the categorized commits that will be included in the release.
@@ -79,9 +79,9 @@ Use the bundled Dart CLI script to apply changes safely. The script is located a
 
 Ask the user to confirm the prepared release based on the generated preview in Step 2:
 
-- First present the version change options (e.g., "1.3.0 (推奨)", "1.2.4", "2.0.0").
+- First present the version change options (e.g., "1.3.0 (Recommended)", "1.2.4", "2.0.0").
 - Once the user chooses the version, proceed to update the files locally via Step 3.
-- After running the execution helpers, show the user the Git diff (`git diff`) and ask: "コミットしてリリース (v$NEW_VERSION) に進みますか？"
+- After running the execution helpers, show the user the Git diff (`git diff`) and ask: "Ready to create release commit and tag (v$NEW_VERSION)?"
   Wait for explicit confirmation.
 
 ### 5. Git & GitHub Operations
