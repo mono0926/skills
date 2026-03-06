@@ -79,9 +79,7 @@ void main() {
       expect(content, isNot(contains('Should be skipped.')));
     });
 
-    test(
-      'overwrites (prepends) with force if version already exists',
-      () async {
+    test('overwrites with force if version exists', () async {
       final changelogFile = File('${tempDir.path}/CHANGELOG.md');
       await changelogFile.writeAsString(
         '## 1.0.0 - 2026-03-01\n\nInitial release.\n',
