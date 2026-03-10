@@ -7,19 +7,49 @@ description: A specialized workflow for releasing Dart and Flutter packages to p
 
 This skill is a specialized release workflow for Dart and Flutter packages published to pub.dev (including Dart CLI tools). It relies on a local helper script (`release_helper`) to safely manipulate `pubspec.yaml` and `CHANGELOG.md`.
 
+## Official Documentation
+
+For detailed information on automated publishing, refer to the official Dart documentation:
+[Automated publishing of packages to pub.dev](https://dart.dev/tools/pub/automated-publishing)
+
 ## Workflow Overview
 
 Follow these steps precisely:
 
 ### 0. Initial Setup Verification (One-time only)
 
-If this is the first time the package is being published via GitHub Actions, ensure the user has configured OIDC on pub.dev:
+If this is the first time the package is being published via GitHub Actions, ensure the user has configured OIDC on pub.dev and added the workflow file:
 
-1. Advise the user to access `https://pub.dev/packages/<package_name>/admin`.
-2. Find the **Automated publishing** section and click **Enable publishing from GitHub Actions**.
-3. Recommend setting the **Repository** to the current repository (`owner/repo`) and the **Tag pattern** to `v{{version}}`.
+1. **Configure pub.dev**:
+   - Advise the user to access `https://pub.dev/packages/<package_name>/admin`.
+   - Find the **Automated publishing** section and click **Enable publishing from GitHub Actions**.
+   - Recommend setting the **Repository** to the current repository (`owner/repo`).
+   - Set the **Tag pattern**:
+     - For single package repositories: `v{{version}}` (recommended) or `{{version}}`.
+     - For monorepos: `package_name-v{{version}}`.
+   - **Security Hardening (Optional but recommended)**: Mention the **Require GitHub Actions environment** option to restrict publishing to specific users/approvers via GitHub Deployment Environments.
 
-Wait for the user to confirm this is done if it's a new setup.
+2. **Add GitHub Actions Workflow**:
+   - Ensure `.github/workflows/publish.yml` exists with the following content (adjust the tag pattern if necessary):
+
+```yaml
+name: Publish to pub.dev
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*' # Align with the tag-pattern on pub.dev (e.g., 'v{{version}}')
+
+jobs:
+  publish:
+    permissions:
+      id-token: write # Essential for OIDC authentication
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    # with:
+    #   working-directory: path/to/package # Required if the package is not in the root
+```
+
+Wait for the user to confirm the setup is complete before proceeding with the first automated release.
 
 ### 1. Pre-release Checks
 
