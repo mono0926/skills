@@ -52,14 +52,32 @@
     "gws-gmail": {
       "source": "googleworkspace/cli",
       "sourceType": "github",
-      "computedHash": "b163d2dd18ec5a0a32f08542652c3550c174a0e624de2e538d30e41273736401",
-      "skillFolderHash": "5a04f47d841eb8848d30dd7d7db0810047e5ffa6"
+      "computedHash": "91a803ad581831993d71f4f563ae7d3c871d7dbcd7ffa6af1ceb622f6a7eae64",
+      "skillFolderHash": "eb527723ac1ffb7edfda9e83b0e4e2a67b2b756b"
+    },
+    "gws-gmail-forward": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "09720d823c19700dc90ab460c71d25202a8fadfe8733cafdc9f374fbf07a2019",
+      "skillFolderHash": "49db5909057e25e2346d439d22b98bd8c964f8e9"
+    },
+    "gws-gmail-reply": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "0840e828aad2f59ef992a8f385ee7c602701f2a68f138cfc0691a6999cf4e8c5",
+      "skillFolderHash": "ec9e6785604626323ce954cfd008d97a4c757a10"
+    },
+    "gws-gmail-reply-all": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "55ce803786f6a68e0161cf7853ed1b4b1f28a499cdb3576d89a43627cc8ddfb6",
+      "skillFolderHash": "3c77a2299e78a3e4030f8479cdf5cd01b812e249"
     },
     "gws-gmail-send": {
       "source": "googleworkspace/cli",
       "sourceType": "github",
-      "computedHash": "e572ade0f850183fa2764734027071181816754a3554597f252f6b6a15d15a54",
-      "skillFolderHash": "9b8a3a8804f2555d0e3eb63a1451627ecb1b1ccf"
+      "computedHash": "343853e0025d5b00448d25cda079d99791aa0ee8f3595736103a7f00df466f58",
+      "skillFolderHash": "0685363716cc024de343aea504241622754eaa8c"
     },
     "gws-gmail-triage": {
       "source": "googleworkspace/cli",
