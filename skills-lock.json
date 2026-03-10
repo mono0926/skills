@@ -1,0 +1,216 @@
+{
+  "version": 3,
+  "skills": {
+    "gws-calendar": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "abf4b5c72c8e3d7ed284dd0a2208ea468dbb4ddbfbe5e13edb802721c92eee65",
+      "skillFolderHash": "80c98ff8dcf0c96f5d22e9e34101968d42c47135"
+    },
+    "gws-calendar-agenda": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "ecf1523d44de0ea11544daeca6a8e85e91110a3d4bfe6421df798c28e1a4a6d2",
+      "skillFolderHash": "d727888a2f9206e1a6bb7d1439ae0ede35095e48"
+    },
+    "gws-calendar-insert": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "d07a2c5f533a792f2451c963b06a098b9c97b6529eab0257fcf72a5908652a44",
+      "skillFolderHash": "ac5187305907c6d60eed7aefe6dfc14f049c5f4e"
+    },
+    "gws-docs": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "b0f05a45866431fcc80d56e22e0711b724f707dc12ede096216603753f1d2d93",
+      "skillFolderHash": "a7da40857bfbaf865a75d981257a7b9624827e79"
+    },
+    "gws-docs-write": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "abe965216bbaec06178d07256bfb9c46ea43fad4770928750a3e8168699ec859",
+      "skillFolderHash": "39890a5584a66860b173ec3d1380eb8d7f347ef7"
+    },
+    "gws-drive": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "e631c51862c66fc981e36baab06db41cf9f16ce969da0b7a3cfcbb307c102415",
+      "skillFolderHash": "93ffc07d88a028ed2fb1b17741214ad572559c20"
+    },
+    "gws-drive-upload": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "c74a909875d8204d753155fa5eb9c2ec5830c1e92c155901a59d8b6d753d5f39",
+      "skillFolderHash": "81211255691edf50416a622005b7b1ee77bdf826"
+    },
+    "gws-forms": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "c5ebe9fe48a9db71ff7c8bdc9a50b94311e4bb9e4820b7372731bdd832d5aeb2",
+      "skillFolderHash": "cbb1092a6878ef4bed936b241eb96c8795e963b0"
+    },
+    "gws-gmail": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "b163d2dd18ec5a0a32f08542652c3550c174a0e624de2e538d30e41273736401",
+      "skillFolderHash": "5a04f47d841eb8848d30dd7d7db0810047e5ffa6"
+    },
+    "gws-gmail-send": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "e572ade0f850183fa2764734027071181816754a3554597f252f6b6a15d15a54",
+      "skillFolderHash": "9b8a3a8804f2555d0e3eb63a1451627ecb1b1ccf"
+    },
+    "gws-gmail-triage": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "aa414ccffc6093af4ccfccd8c32b69b1b79769426292538ac59281928972b052",
+      "skillFolderHash": "44f2b0eb95a83389272b68791f4c918aaae40f2d"
+    },
+    "gws-gmail-watch": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "543c5751cda04933d2f6b833f75d63528bfb8ab3781a36be31a9bf6af62db655",
+      "skillFolderHash": "e2633ddda7ece4287b681062d5da415f22e52e2c"
+    },
+    "gws-keep": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "dfcb81f55d0196eb22b7cbfcc132b2bf4f967b78498ab8b3d0cf671d9352c852",
+      "skillFolderHash": "94cca7a5868999779e6cdcf57f6fa39affe0d26d"
+    },
+    "gws-meet": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "0ffd5adb978b96ec307db2fc04fdf1b50a6a25d96297d9a6d4e0e2ad10d9fbe4",
+      "skillFolderHash": "e09809eb43470a0cab190af216539dc6d04ea5b2"
+    },
+    "gws-people": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "87d85bb18a8946600a64de7eef2911159925c2a97b5693e3142394699571f786",
+      "skillFolderHash": "d79e2f93d72d7800d19c2f3a61954a9129660078"
+    },
+    "gws-sheets": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "457d0f8b4288417a8c479af3d6307b7d891050a75545a5eca49b9e51f3dde8bc",
+      "skillFolderHash": "15288c36ef2a904ff016b49cc0449b6c91d57e0b"
+    },
+    "gws-sheets-append": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "6528634f19b8a42ef9c7e8bdbe53edade433587c63d72aea95f9ae974a97d6ac",
+      "skillFolderHash": "2804dc2fd66c3dfe642434064451841bf10ba92f"
+    },
+    "gws-sheets-read": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "fb367c4742a262f2498a90bb9ee5dde29f9fcc9787fb5bea106f27387041612f",
+      "skillFolderHash": "faab213bdc42057c0140323a85dcabb7024b7ff2"
+    },
+    "gws-slides": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "0d6725cc124e0b3274167d8a20d02a0e4c40cc1a321d8c94812aa4a4b06cea54",
+      "skillFolderHash": "ee8f31f1e3691a8c3c75942b450a8653205bf0be"
+    },
+    "gws-tasks": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "5d07c83d7b816768776b8efa5aa120e4f8af4b92288ff230e493c532fe4d30c0",
+      "skillFolderHash": "cf866728a6ef777367002d2f43291d0096c950c4"
+    },
+    "gws-workflow": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "53b68333360905c4a8aad88e3d264fa76581763cc17d4b1c3f4e98d4f5be53b8",
+      "skillFolderHash": "96dba1d91e0f09079ac09d779ab126c779ba0aad"
+    },
+    "gws-workflow-email-to-task": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "edda1e390349b1d7f653a7ea7ab4df75c88c4371ea4be3182073131acf1e51c3",
+      "skillFolderHash": "6aa3016fd33f5951e3e33bd8c15528634b7235da"
+    },
+    "gws-workflow-file-announce": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "f1e48e3ef39e285cb012aa9db5c25230d3efbadf7f70969ef3e8e96f1f642fa1",
+      "skillFolderHash": "24fbecd3983ad4c88b2276d6650cfffa02361cff"
+    },
+    "gws-workflow-meeting-prep": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "c42106139e242fcd256113178b7951c8c7a97b87e6000412a3bf6db1f1323d78",
+      "skillFolderHash": "cb895464ceec4f88bf5e8f1d37f93cc9223a639e"
+    },
+    "gws-workflow-standup-report": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "3b13248893103f86763aa0dba12b66f9e22e127b566344805e84fd5524eb54d7",
+      "skillFolderHash": "28f0db548f4100d2773e3ee22ae59f36578f7bb7"
+    },
+    "gws-workflow-weekly-digest": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "573bdfbf09175f71036ec4da0c9119ccd8bf132e07a5e0b1d0657d7053e42ce3",
+      "skillFolderHash": "055cb4f55bcba3201c0678495222fcb1bddeb188"
+    },
+    "recipe-create-gmail-filter": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "a2471d25e8b8baf19962222b25a918210828764484ef323b40f541e3c91d8ee3",
+      "skillFolderHash": "3862d0da2778fcc90679a19639eb31d1e595b20d"
+    },
+    "recipe-create-meet-space": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "1e4cbfd3a8faf0c14af62d88c4d2fe2b906dd15ffe86962227de83e5cffc0827",
+      "skillFolderHash": "a13543eb761e4be6ba4f9ca701b14f2feefcbad0"
+    },
+    "recipe-create-shared-drive": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "5957f0f77b0c87cb55cd077cf094c2365c2d9147e7fa4fb06ff30ca17c5b8ff8",
+      "skillFolderHash": "561b68f07265bddd2443a789c0d90df7b8200bae"
+    },
+    "recipe-email-drive-link": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "68c705a6cd8dba85a23e9cc09b4f145e3603b493dbd71271b80a8c3a3a639669",
+      "skillFolderHash": "73507d0cd131afeafb551b344039ade3d67f84e7"
+    },
+    "recipe-organize-drive-folder": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "7ac2b9278567abaa6c4efa004ec74cc9c0137dddb51f8209d1811c794bfbf35c",
+      "skillFolderHash": "9ac7d009e669f1c4b0df5ad36f72edace50749dc"
+    },
+    "recipe-reschedule-meeting": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "8dac9a57d3337244bd20b81733d074e5eed07bde93ab535310ad87c8e037c995",
+      "skillFolderHash": "a0a2ab61d5401ddb11f768e37a1f35d44f3c14ef"
+    },
+    "recipe-review-meet-participants": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "13e1cc467df9852c665319f4be0cc1ee02769dc7922fe251cc45b3f3db3c75d4",
+      "skillFolderHash": "b2399933341ec319780f35001a3625f167720ee7"
+    },
+    "recipe-review-overdue-tasks": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "d6e9475616ce8f8b0eae0d78db20b715d9deb157b2384a7c1f594bc4394fb633",
+      "skillFolderHash": "84816d7fe48343e56e2ed221c91c2e6fbbb0a2b9"
+    },
+    "recipe-watch-drive-changes": {
+      "source": "googleworkspace/cli",
+      "sourceType": "github",
+      "computedHash": "18fd02047764692c60efb9ef03ac3103dd1d3f5fcff152ca5dd37de715f5d9bf",
+      "skillFolderHash": "ab82010c5606d94a4ae6f3d2327c9857c11142ed"
+    }
+  },
+  "dismissed": {}
+}
