@@ -12,6 +12,9 @@ This skill is a specialized release workflow for Dart and Flutter packages publi
 For detailed information on automated publishing, refer to the official Dart documentation:
 [Automated publishing of packages to pub.dev](https://dart.dev/tools/pub/automated-publishing)
 
+> [!CAUTION]
+> **Immutable Tags**: NEVER delete, modify, or re-push a Git tag that has already been published to pub.dev. Pub.dev entries are immutable. If a mistake is found after publishing, you must publish a new version (e.g., a patch release) instead of attempting to overwrite the existing tag.
+
 ## Workflow Overview
 
 Follow these steps precisely:
