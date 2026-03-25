@@ -7,6 +7,7 @@ class FilamentItem {
   final String type;
   final String color;
   final int quantity;
+  final int price;
   final String source;
 
   FilamentItem({
@@ -15,19 +16,32 @@ class FilamentItem {
     required this.type,
     required this.color,
     required this.quantity,
+    required this.price,
     required this.source,
   });
 
   @override
-  String toString() => '$type ($color) x $quantity';
+  String toString() => '$type ($color) x $quantity @ ¥$price';
+
+  int get priority {
+    final t = type.toLowerCase();
+    if (t.contains('pla')) return 1;
+    if (t.contains('petg')) return 2;
+    if (t.contains('tpu')) return 3;
+    if (t.contains('abs')) return 4;
+    if (t.contains('asa')) return 5;
+    if (t.contains('サポート') || t.contains('support')) return 6;
+    return 10;
+  }
 }
 
 Future<void> main() async {
-  print('--- Bambu Lab Filament Tracker (v2.0) ---');
+  print('--- Bambu Lab Filament Tracker (v2.3) ---');
 
   final queries = [
     'from:bambulab.com "ご注文確認"',
     'from:bambulab.com "出荷状況更新"',
+    'from:bambulab.com "キャンセル"',
     'from:amazon.co.jp "Bambu Lab" "フィラメント"',
   ];
 
@@ -53,7 +67,36 @@ Future<void> main() async {
 
   final items = <FilamentItem>[];
   final processedOrderIds = <String>{};
+  final cancelledOrderIds = <String>{};
 
+  // First pass: detect cancellations
+  for (final msgId in allMessages.keys) {
+    final msg = await runGws([
+      'gmail',
+      'users',
+      'messages',
+      'get',
+      '--params',
+      jsonEncode({'userId': 'me', 'id': msgId, 'format': 'full'}),
+    ]);
+    if (msg == null) continue;
+
+    final body = getBody(msg['payload']);
+    final content = body.replaceAll('\u200b', '');
+
+    if (content.contains('ご注文がキャンセルされました') || content.contains('Order Canceled')) {
+      final orderIdMatch = RegExp(r'JP\d+').firstMatch(content);
+      if (orderIdMatch != null) {
+        cancelledOrderIds.add(orderIdMatch.group(0)!);
+      }
+    }
+  }
+
+  if (cancelledOrderIds.isNotEmpty) {
+    print('Detected cancelled orders: ${cancelledOrderIds.join(', ')}\n');
+  }
+
+  // Second pass: extract items
   for (final msgId in allMessages.keys) {
     final msg = await runGws([
       'gmail',
@@ -73,29 +116,44 @@ Future<void> main() async {
 
     final body = getBody(msg['payload']);
     final content = body.replaceAll('\u200b', '');
+    final subject = headers.firstWhere((h) => h['name'] == 'Subject', orElse: () => {'value': ''})['value'] as String;
 
     // Extract Order ID
-    final orderIdMatch = RegExp(r'JP\d+').firstMatch(content);
+    final orderIdMatch = RegExp(r'JP\d+').firstMatch(content) ?? RegExp(r'JP\d+').firstMatch(subject);
     final orderId = orderIdMatch?.group(0) ?? 'Unknown';
 
+    if (cancelledOrderIds.contains(orderId)) continue;
     if (processedOrderIds.contains(orderId) && orderId != 'Unknown') continue;
     processedOrderIds.add(orderId);
 
     // Parse Bambu Store Items
-    if (content.contains('Bambu Lab ストア')) {
-      // Look for Item Name × Quantity
+    final isBambuStore = content.contains('Bambu Lab ストア') || content.contains('Bambu Lab Japan');
+    final isConfirmation = subject.contains('ご注文確認') || subject.contains('注文') || content.contains('ご注文頂きありがとうございました') || content.contains('配送中');
+
+    if (isBambuStore && isConfirmation) {
       final itemMatches = RegExp(r'([^\n]+) × (\d+)').allMatches(content);
-      for (final match in itemMatches) {
+      final matchesList = itemMatches.toList();
+      
+      for (int i = 0; i < matchesList.length; i++) {
+        final match = matchesList[i];
         final itemName = match.group(1)!.trim();
         if (itemName.contains('小計') || itemName.contains('合計')) continue;
         
         final quantity = int.parse(match.group(2)!);
         
-        // Next lines often contain color info
-        final matchEnd = match.end;
-        final nextContent = content.substring(matchEnd, (matchEnd + 100).clamp(0, content.length));
-        final colorMatch = RegExp(r'([^\n/]+)\s*(\(\d+\))? /').firstMatch(nextContent);
+        final start = match.end;
+        final end = (i + 1 < matchesList.length) ? matchesList[i+1].start : content.indexOf('小計', start);
+        final block = content.substring(start, (end != -1 ? end : start + 300).clamp(0, content.length));
+        
+        final colorMatch = RegExp(r'([^\n/]+)\s*(\(\d+\))? /').firstMatch(block);
         final color = colorMatch?.group(1)?.trim() ?? 'N/A';
+        
+        final priceMatches = RegExp(r'¥(\d{1,3}(,\d{3})*|\d+)').allMatches(block);
+        int price = 0;
+        if (priceMatches.isNotEmpty) {
+          final lastPriceStr = priceMatches.last.group(1)!.replaceAll(',', '');
+          price = int.parse(lastPriceStr);
+        }
 
         if (isFilament(itemName)) {
           items.add(FilamentItem(
@@ -104,17 +162,22 @@ Future<void> main() async {
             type: itemName,
             color: color,
             quantity: quantity,
+            price: price,
             source: 'Store',
           ));
         }
       }
     } 
-    // Parse Amazon Items
     else if (content.contains('Amazon')) {
       final itemMatches = RegExp(r'\*\s+([^\n]+)\n\s+数量: (\d+)').allMatches(content);
       for (final match in itemMatches) {
         final itemName = match.group(1)!.trim();
         final quantity = int.parse(match.group(2)!);
+        
+        final start = match.end;
+        final nextBlock = content.substring(start, (start + 100).clamp(0, content.length));
+        final priceMatch = RegExp(r'(\d+)\s*JPY').firstMatch(nextBlock);
+        final price = int.parse(priceMatch?.group(1) ?? '0');
         
         if (itemName.contains('Bambu') || itemName.contains('フィラメント')) {
           items.add(FilamentItem(
@@ -123,6 +186,7 @@ Future<void> main() async {
             type: 'Amazon Item',
             color: itemName,
             quantity: quantity,
+            price: price,
             source: 'Amazon',
           ));
         }
@@ -130,44 +194,56 @@ Future<void> main() async {
     }
   }
 
-  print('\n### Detailed Purchase History\n');
-  print('| Date | Order ID | Filament Type | Color | Qty | Source |');
-  print('|---|---|---|---|---|---|');
+  items.sort((a, b) {
+    if (a.priority != b.priority) return a.priority.compareTo(b.priority);
+    final typeComp = a.type.compareTo(b.type);
+    if (typeComp != 0) return typeComp;
+    return a.color.compareTo(b.color);
+  });
+
+  print('\n### Detailed Purchase History (Full)\n');
+  print('| Date | Order ID | Filament Type | Color | Qty | Price | Source |');
+  print('|---|---|---|---|---|---|---|');
+  int grandTotalPrice = 0;
   for (final item in items) {
-    print('| ${item.date} | ${item.orderId} | ${item.type} | ${item.color} | ${item.quantity} | ${item.source} |');
+    print('| ${item.date} | ${item.orderId} | ${item.type} | ${item.color} | ${item.quantity} | ¥${item.price} | ${item.source} |');
+    grandTotalPrice += item.price;
   }
 
-  print('\n### Summary by Filament Type\n');
-  final typeSummary = <String, int>{};
+  print('\n### Summary by Filament Type & Color (Grouped)\n');
+  final groupedSummary = <String, Map<String, int>>{};
   for (final item in items) {
-    typeSummary[item.type] = (typeSummary[item.type] ?? 0) + item.quantity;
-  }
-  print('| Filament Type | Total Quantity |');
-  print('|---|---|');
-  final sortedTypes = typeSummary.keys.toList()..sort((a, b) => typeSummary[b]!.compareTo(typeSummary[a]!));
-  for (final type in sortedTypes) {
-    print('| $type | ${typeSummary[type]} |');
+    final key = '${item.type}|${item.color}|${item.priority}';
+    if (!groupedSummary.containsKey(key)) {
+      groupedSummary[key] = {'qty': 0, 'price': 0};
+    }
+    groupedSummary[key]!['qty'] = groupedSummary[key]!['qty']! + item.quantity;
+    groupedSummary[key]!['price'] = groupedSummary[key]!['price']! + item.price;
   }
 
-  print('\n### Summary by Color\n');
-  final colorSummary = <String, int>{};
-  for (final item in items) {
-    final key = '${item.type} [${item.color}]';
-    colorSummary[key] = (colorSummary[key] ?? 0) + item.quantity;
-  }
-  print('| Filament [Color] | Total Quantity |');
-  print('|---|---|');
-  final sortedColors = colorSummary.keys.toList()..sort((a, b) => colorSummary[b]!.compareTo(colorSummary[a]!));
-  for (final color in sortedColors) {
-    print('| $color | ${colorSummary[color]} |');
+  print('| Filament Type | Color | Total Qty | Total Price |');
+  print('|---|---|---|---|');
+  
+  final sortedGroupKeys = groupedSummary.keys.toList()..sort((a, b) {
+    final ap = int.parse(a.split('|')[2]);
+    final bp = int.parse(b.split('|')[2]);
+    if (ap != bp) return ap.compareTo(bp);
+    return a.compareTo(b);
+  });
+
+  for (final key in sortedGroupKeys) {
+    final parts = key.split('|');
+    final data = groupedSummary[key]!;
+    print('| ${parts[0]} | ${parts[1]} | ${data['qty']} | ¥${data['price']} |');
   }
   
   print('\n**Grand Total: ${items.fold(0, (sum, i) => sum + i.quantity)} rolls**');
+  print('**Total Spent: ¥$grandTotalPrice**');
 }
 
 bool isFilament(String name) {
   final lower = name.toLowerCase();
-  return lower.contains('pla') || lower.contains('petg') || lower.contains('tpu') || lower.contains('abs') || lower.contains('asa') || lower.contains('cf') || lower.contains('gf') || lower.contains('フィラメント');
+  return lower.contains('pla') || lower.contains('petg') || lower.contains('tpu') || lower.contains('abs') || lower.contains('asa') || lower.contains('cf') || lower.contains('gf') || lower.contains('フィラメント') || lower.contains('サポート') || lower.contains('support');
 }
 
 String getBody(Map<String, dynamic>? payload) {
