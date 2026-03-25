@@ -1,12 +1,33 @@
 import 'dart:convert';
 import 'dart:io';
 
+class FilamentItem {
+  final String date;
+  final String orderId;
+  final String type;
+  final String color;
+  final int quantity;
+  final String source;
+
+  FilamentItem({
+    required this.date,
+    required this.orderId,
+    required this.type,
+    required this.color,
+    required this.quantity,
+    required this.source,
+  });
+
+  @override
+  String toString() => '$type ($color) x $quantity';
+}
+
 Future<void> main() async {
-  print('--- Bambu Lab Purchase Tracker (Final Match) ---');
+  print('--- Bambu Lab Filament Tracker (v2.0) ---');
 
   final queries = [
-    'from:bambulab.com "JP" after:2024/01/01',
-    '"Bambu Japan"', // Broadened from PayPal specific
+    'from:bambulab.com "ご注文確認"',
+    'from:bambulab.com "出荷状況更新"',
     'from:amazon.co.jp "Bambu Lab" "フィラメント"',
   ];
 
@@ -28,10 +49,10 @@ Future<void> main() async {
     }
   }
 
-  print('Found ${allMessages.length} potential messages. Analyzing...\n');
+  print('Found ${allMessages.length} potential messages. Analyzing details...\n');
 
-  final payments = <String, Map<String, dynamic>>{};
-  final amazonOrders = <String, Map<String, dynamic>>{};
+  final items = <FilamentItem>[];
+  final processedOrderIds = <String>{};
 
   for (final msgId in allMessages.keys) {
     final msg = await runGws([
@@ -44,83 +65,109 @@ Future<void> main() async {
     ]);
     if (msg == null) continue;
 
-    final snippet = msg['snippet'] as String? ?? '';
     final headers = (msg['payload']?['headers'] as List?) ?? [];
-
-    String? subject;
     String? date;
     for (final header in headers) {
-      if (header['name'] == 'Subject') subject = header['value'];
       if (header['name'] == 'Date') date = header['value'];
     }
 
     final body = getBody(msg['payload']);
-    final content = '$snippet $body'.replaceAll(
-      '\u200b',
-      '',
-    ); // Remove zero-width spaces
+    final content = body.replaceAll('\u200b', '');
 
-    // 1. Payment Detection (PayPal/PayPay/Store)
-    if (content.contains('Bambu Japan')) {
-      // Look for amount: ¥19800, ¥19,800, \19800 etc.
-      final amountMatches = RegExp(
-        r'[¥\\](\d{1,3}(,\d{3})*|\d+)\s*JPY?',
-      ).allMatches(content);
-      for (final match in amountMatches) {
-        final amountStr = match.group(1)!.replaceAll(',', '');
-        final amount = int.parse(amountStr);
-        if (amount < 1000) continue; // Skip small irrelevant numbers
+    // Extract Order ID
+    final orderIdMatch = RegExp(r'JP\d+').firstMatch(content);
+    final orderId = orderIdMatch?.group(0) ?? 'Unknown';
 
-        final key = '${date}_$amount';
-        if (!payments.containsKey(key)) {
-          payments[key] = {
-            'date': date,
-            'amount': amount,
-            'type': amount > 50000 ? 'Machine/Big' : 'Filament/Parts',
-          };
+    if (processedOrderIds.contains(orderId) && orderId != 'Unknown') continue;
+    processedOrderIds.add(orderId);
+
+    // Parse Bambu Store Items
+    if (content.contains('Bambu Lab ストア')) {
+      // Look for Item Name × Quantity
+      final itemMatches = RegExp(r'([^\n]+) × (\d+)').allMatches(content);
+      for (final match in itemMatches) {
+        final itemName = match.group(1)!.trim();
+        if (itemName.contains('小計') || itemName.contains('合計')) continue;
+        
+        final quantity = int.parse(match.group(2)!);
+        
+        // Next lines often contain color info
+        final matchEnd = match.end;
+        final nextContent = content.substring(matchEnd, (matchEnd + 100).clamp(0, content.length));
+        final colorMatch = RegExp(r'([^\n/]+)\s*(\(\d+\))? /').firstMatch(nextContent);
+        final color = colorMatch?.group(1)?.trim() ?? 'N/A';
+
+        if (isFilament(itemName)) {
+          items.add(FilamentItem(
+            date: date ?? 'N/A',
+            orderId: orderId,
+            type: itemName,
+            color: color,
+            quantity: quantity,
+            source: 'Store',
+          ));
+        }
+      }
+    } 
+    // Parse Amazon Items
+    else if (content.contains('Amazon')) {
+      final itemMatches = RegExp(r'\*\s+([^\n]+)\n\s+数量: (\d+)').allMatches(content);
+      for (final match in itemMatches) {
+        final itemName = match.group(1)!.trim();
+        final quantity = int.parse(match.group(2)!);
+        
+        if (itemName.contains('Bambu') || itemName.contains('フィラメント')) {
+          items.add(FilamentItem(
+            date: date ?? 'N/A',
+            orderId: orderId,
+            type: 'Amazon Item',
+            color: itemName,
+            quantity: quantity,
+            source: 'Amazon',
+          ));
         }
       }
     }
-
-    // 2. Amazon Detection
-    if (subject?.contains('Amazon') == true || content.contains('Amazon')) {
-      if (content.contains('Bambu Lab') && content.contains('フィラメント')) {
-        amazonOrders[msgId] = {
-          'date': date,
-          'items': 'Bambu Filament (via Amazon)',
-        };
-      }
-    }
   }
 
-  print('\n### Bambu Lab Purchase Summary\n');
-  print('| Date | Source | Type | Amount |');
-  print('|---|---|---|---|');
-
-  int filamentTotal = 0;
-  int machineTotal = 0;
-
-  final sortedPayments = payments.values.toList()
-    ..sort((a, b) => (b['date'] as String).compareTo(a['date'] as String));
-
-  for (final p in sortedPayments) {
-    final amount = p['amount'] as int;
-    if (p['type'] == 'Machine/Big') {
-      machineTotal += amount;
-    } else {
-      filamentTotal += amount;
-    }
-    print('| ${p['date']} | Store/PayPal | ${p['type']} | ¥$amount |');
+  print('\n### Detailed Purchase History\n');
+  print('| Date | Order ID | Filament Type | Color | Qty | Source |');
+  print('|---|---|---|---|---|---|');
+  for (final item in items) {
+    print('| ${item.date} | ${item.orderId} | ${item.type} | ${item.color} | ${item.quantity} | ${item.source} |');
   }
 
-  for (final p in amazonOrders.values) {
-    print('| ${p['date']} | Amazon | Filament | (Check App) |');
+  print('\n### Summary by Filament Type\n');
+  final typeSummary = <String, int>{};
+  for (final item in items) {
+    typeSummary[item.type] = (typeSummary[item.type] ?? 0) + item.quantity;
+  }
+  print('| Filament Type | Total Quantity |');
+  print('|---|---|');
+  final sortedTypes = typeSummary.keys.toList()..sort((a, b) => typeSummary[b]!.compareTo(typeSummary[a]!));
+  for (final type in sortedTypes) {
+    print('| $type | ${typeSummary[type]} |');
   }
 
-  print('\n**Total Spent (Filament/Parts): ¥$filamentTotal**');
-  if (machineTotal > 0) {
-    print('**Total Spent (Machines/Big Orders): ¥$machineTotal**');
+  print('\n### Summary by Color\n');
+  final colorSummary = <String, int>{};
+  for (final item in items) {
+    final key = '${item.type} [${item.color}]';
+    colorSummary[key] = (colorSummary[key] ?? 0) + item.quantity;
   }
+  print('| Filament [Color] | Total Quantity |');
+  print('|---|---|');
+  final sortedColors = colorSummary.keys.toList()..sort((a, b) => colorSummary[b]!.compareTo(colorSummary[a]!));
+  for (final color in sortedColors) {
+    print('| $color | ${colorSummary[color]} |');
+  }
+  
+  print('\n**Grand Total: ${items.fold(0, (sum, i) => sum + i.quantity)} rolls**');
+}
+
+bool isFilament(String name) {
+  final lower = name.toLowerCase();
+  return lower.contains('pla') || lower.contains('petg') || lower.contains('tpu') || lower.contains('abs') || lower.contains('asa') || lower.contains('cf') || lower.contains('gf') || lower.contains('フィラメント');
 }
 
 String getBody(Map<String, dynamic>? payload) {
