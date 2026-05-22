@@ -39,7 +39,7 @@ gcloud iam workload-identity-pools create "${POOL_NAME}" \
 ```
 
 ### 2.3. Workload Identity Provider の作成
-GitHub OIDC用の認証プロバイダを設定します。アトリビュートマッピングで、GitHubから送られてくるOIDCトークンの情報をGoogle Cloud側のアトリビュートにマッピングします。
+GitHub OIDC用の認証プロバイダを設定します。アトリビュートマッピングで、GitHubから送られてくるOIDCトークンの情報をGoogle Cloud側のアトリビュートにマッピングします。また、組織ポリシー等でアトリビュート条件が必須とされる場合やセキュリティ堅牢化のため、`--attribute-condition` でリポジトリオーナーの検証を追加することを強く推奨します。
 ```bash
 gcloud iam workload-identity-pools providers create-oidc "${PROVIDER_NAME}" \
   --project="${PROJECT_ID}" \
@@ -47,8 +47,11 @@ gcloud iam workload-identity-pools providers create-oidc "${PROVIDER_NAME}" \
   --workload-identity-pool="${POOL_NAME}" \
   --display-name="GitHub Actions Provider" \
   --issuer-uri="https://token.actions.githubusercontent.com" \
-  --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.actor=assertion.actor,attribute.repository_owner=assertion.repository_owner"
+  --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.actor=assertion.actor,attribute.repository_owner=assertion.repository_owner" \
+  --attribute-condition="assertion.repository_owner == 'YOUR_ORGANIZATION_OR_USER'"
 ```
+> [!IMPORTANT]
+> `--attribute-condition` には、必ず自身のリポジトリオーナー（GitHubユーザー名または組織名。例: `'mono0926'`）を指定してください。これを怠ると、他の誰かのリポジトリから認証要求が送られた場合にポリシーチェックをバイパスされる危険性があります。さらに厳格にする場合、`assertion.ref == 'refs/heads/main'` などのブランチ制限条件を追加することも可能です。
 
 ### 2.4. 専用サービスアカウントの作成
 デプロイ処理を実行するための専用サービスアカウントを作成します。
@@ -117,14 +120,16 @@ on:
     branches:
       - main
 
+# 1. permissions は必ず id-token と contents の両方をセットで明示的に指定してください。
 permissions:
   id-token: write # OIDCトークンの要求に必須
-  contents: read  # リポジトリ読み取りに必須
+  contents: read  # actions/checkout等のリポジトリ読み取りに必須
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      # 2. サードパーティアクションは最新のメジャーバージョン（@v4等）で固定します
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -136,16 +141,14 @@ jobs:
           workload_identity_provider: 'projects/123456789012/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
           service_account: 'github-actions-deployer@dog-prod.iam.gserviceaccount.com'
 
-      # Firebase CLIのセットアップとデプロイ
-      # （注: Firebase CLIは、google-github-actions/authによって生成された資格情報を自動的に認識します）
+      # 3. Firebase CLIを用いて直接デプロイ（推奨）
+      # （注: Firebase CLIは、google-github-actions/authが生成した資格情報を自動検知してログインします）
       - name: Deploy to Firebase Hosting
-        uses: w9jds/firebase-action@v2.2.0
-        with:
-          args: deploy --only hosting
-        env:
-          # google-github-actions/authがエクスポートした環境変数を利用してFirebaseにプロジェクトを通知
-          GCP_PROJECT: 'dog-prod'
+        run: npx -y firebase-tools deploy --only hosting --project dog-prod
+        working-directory: firebase
 ```
 
 > [!WARNING]
-> Firebase CLIのバージョンやアクションによっては、`FIREBASE_TOKEN` が不要になり、上記のように `GCP_PROJECT` 環境変数を設定するだけで Workload Identity の認証情報を使ってデプロイできるようになります。
+> **重要: FirebaseExtended/action-hosting-deploy アクションについて**
+> 従来よく使われていた `FirebaseExtended/action-hosting-deploy` アクションは、入力パラメータ `firebaseServiceAccount` が必須（Required）に指定されているため、OIDC化にあたってこれを削除すると **`Error: Input required and not supplied: firebaseServiceAccount`** というエラーでジョブが即時失敗します。
+> OIDC認証を使用する場合は、上記テンプレートのように `npx -y firebase-tools` などのCLIコマンドを `run` ステップで直接実行するか、OIDCに対応したサードパーティ製アクション（例: `w9jds/firebase-action`）を最新バージョンで使用してください。

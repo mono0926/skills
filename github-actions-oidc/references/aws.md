@@ -58,8 +58,16 @@ GitHub Actionsからのアクセスのみを許可する信頼関係ポリシー
   ]
 }
 ```
-> [!IMPORTANT]
-> `<AWS_ACCOUNT_ID>` と `<GITHUB_REPO>` は実際の値に置き換えてください（例: `arn:aws:iam::123456789012:oidc-provider/...`, `repo:mono0926/dog:*`）。`*` を末尾につけることで、特定リポジトリのすべてのブランチやプルリクエストからの接続を許可します。特定のブランチ（例: `main`）に絞る場合は、`repo:owner/repo:ref:refs/heads/main` のように指定します。
+> [!WARNING]
+> 条件式で `repo:<GITHUB_REPO>:*` のように末尾にワイルドカード（`*`）を使用すると、**対象リポジトリのすべてのブランチ、タグ、およびプルリクエスト（フォーク元からのPR含む）からの接続**が許可されてしまいます。これは、検証されていないコードや第三者のプルリクエストから本番リソースへのアクセスを許してしまう重大なセキュリティリスクを伴います。
+> 
+> **セキュリティのベストプラクティス:**
+> 原則として、デプロイや書き込み権限を持つIAMロールは、以下のように特定の保護されたブランチ（例: `main`）や環境（Environment）に制限してください。
+> 
+> - **mainブランチのみに制限する場合**:
+>   `"token.actions.githubusercontent.com:sub": "repo:<GITHUB_REPO>:ref:refs/heads/main"`
+> - **特定のGitHub環境（例: production）に制限する場合**:
+>   `"token.actions.githubusercontent.com:sub": "repo:<GITHUB_REPO>:environment:production"`
 
 ### 2.3. IAM ロールの作成
 上記で作成した信頼関係ポリシーを指定して、GitHub Actions専用のIAMロールを作成します。
@@ -109,6 +117,16 @@ aws iam put-role-policy \
 ## 3. GitHub Actions ワークフロー設定例
 
 AWS公式の `aws-actions/configure-aws-credentials` アクションを使用します。
+
+### ワークフロー作成における重要セキュリティルール
+
+1. **`permissions` ブロックの明示的な一括定義**:
+   GitHub ActionsでOIDCトークンを発行するためには、ジョブまたはワークフロー全体に `permissions` ブロックを定義し、`id-token: write` と `contents: read` を**同時に**指定する必要があります。
+   > [!IMPORTANT]
+   > `id-token: write` のみを指定すると、デフォルトで `contents` の権限が `none` になり、コードのチェックアウト（`actions/checkout`）等が失敗します。必ず両方をセットで記述してください。
+
+2. **サードパーティ製 Action のバージョン固定**:
+   ワークフローで使用するサードパーティ製 Action（`aws-actions/configure-aws-credentials` など）は、検証済みの信頼できるバージョンを使用するため、原則として最新のメジャーバージョン（例: `@v4`）を明記してください。さらにセキュリティを厳格に管理する場合は、コミットSHAによる固定を推奨します。
 
 ### S3 静的サイトデプロイワークフロー例 (`.github/workflows/deploy-aws.yml`)
 
