@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:args/args.dart';
 import 'package:archive/archive.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
@@ -25,13 +26,47 @@ class UpgradedPackage {
 }
 
 void main(List<String> args) async {
-  final repoRoot = Directory.current;
+  final parser = ArgParser()
+    ..addOption(
+      'path',
+      abbr: 'p',
+      defaultsTo: '.',
+      help: 'Path to the Dart/Flutter project directory containing pubspec.yaml/pubspec.lock.',
+    );
+
+  final argResults = parser.parse(args);
+  final projectPath = argResults['path'] as String;
   
+  final currentDir = Directory.current;
+  final projectDir = Directory(p.canonicalize(p.join(currentDir.path, projectPath)));
+
+  if (!projectDir.existsSync()) {
+    stderr.writeln('Error: Project directory does not exist: ${projectDir.path}');
+    exit(1);
+  }
+
+  final pubspecFile = File(p.join(projectDir.path, 'pubspec.yaml'));
+  final lockFile = File(p.join(projectDir.path, 'pubspec.lock'));
+
+  if (!pubspecFile.existsSync()) {
+    stderr.writeln('Error: pubspec.yaml not found in project directory: ${projectDir.path}');
+    exit(1);
+  }
+
+  // Gitルートの特定
+  final gitRoot = findGitRoot(projectDir);
+  if (gitRoot == null) {
+    stderr.writeln('Error: Git repository root not found from: ${projectDir.path}');
+    exit(1);
+  }
+  print('Git repository root identified: ${gitRoot.path}');
+  print('Project directory: ${projectDir.path}');
+
   // 1. 未コミット変更のチェック
-  print('Checking for uncommitted changes...');
-  final statusResult = await Process.run('git', ['status', '--porcelain'], workingDirectory: repoRoot.path);
-  final diffs = statusResult.stdout.toString().split('\n').where((diff) => diff.isNotEmpty);
-  if (diffs.isNotEmpty) {
+  print('Checking for uncommitted changes in Git repository...');
+  final statusResult = await Process.run('git', ['status', '--porcelain'], workingDirectory: gitRoot.path);
+  final statusLines = statusResult.stdout.toString().split('\n').where((line) => line.isNotEmpty);
+  if (statusLines.isNotEmpty) {
     stderr.writeln('Error: You have uncommitted changes. Please commit or stash them first.');
     exit(1);
   }
@@ -40,24 +75,23 @@ void main(List<String> args) async {
   final dateStr = DateTime.now().toIso8601String().substring(0, 10).replaceAll('-', '');
   final branchName = 'chore/deps/upgrade-packages-$dateStr';
   print('Creating topic branch: $branchName...');
-  await Process.run('git', ['checkout', '-b', branchName], workingDirectory: repoRoot.path);
+  await Process.run('git', ['checkout', '-b', branchName], workingDirectory: gitRoot.path);
 
   // 以前の pubspec.lock の内容を保持
-  print('Reading current pubspec.lock...');
-  final oldLockFile = File(p.join(repoRoot.path, 'monoca_flutter', 'pubspec.lock'));
-  if (!oldLockFile.existsSync()) {
-    stderr.writeln('Error: pubspec.lock not found at ${oldLockFile.path}');
-    exit(1);
+  String oldLockContent = '';
+  if (lockFile.existsSync()) {
+    print('Reading current pubspec.lock...');
+    oldLockContent = lockFile.readAsStringSync();
   }
-  final oldLockContent = oldLockFile.readAsStringSync();
   final oldLockMap = parseLockFile(oldLockContent);
 
-  // 3. パッケージのアップグレード実行
-  print('Upgrading packages with --major-versions...');
+  // 3. パッケージのアップグレード実行コマンドの決定と実行
+  final upgradeCmd = detectUpgradeCommand(projectDir);
+  print('Upgrading packages with command: ${upgradeCmd.join(' ')}...');
   final upgradeResult = await Process.start(
-    'fvm',
-    ['flutter', 'pub', 'upgrade', '--major-versions'],
-    workingDirectory: p.join(repoRoot.path, 'monoca_flutter'),
+    upgradeCmd.first,
+    upgradeCmd.sublist(1),
+    workingDirectory: projectDir.path,
     runInShell: true,
   );
   await stdout.addStream(upgradeResult.stdout);
@@ -69,8 +103,12 @@ void main(List<String> args) async {
   }
 
   // 新しい pubspec.lock の読込
+  if (!lockFile.existsSync()) {
+    stderr.writeln('Error: pubspec.lock was not generated after upgrade.');
+    exit(1);
+  }
   print('Reading updated pubspec.lock...');
-  final newLockContent = oldLockFile.readAsStringSync();
+  final newLockContent = lockFile.readAsStringSync();
   final newLockMap = parseLockFile(newLockContent);
 
   // アップグレードされたパッケージの抽出
@@ -89,8 +127,8 @@ void main(List<String> args) async {
   if (upgradedPackages.isEmpty) {
     print('No packages were upgraded.');
     // ブランチを元に戻して終了
-    await Process.run('git', ['checkout', '-'], workingDirectory: repoRoot.path);
-    await Process.run('git', ['branch', '-d', branchName], workingDirectory: repoRoot.path);
+    await Process.run('git', ['checkout', '-'], workingDirectory: gitRoot.path);
+    await Process.run('git', ['branch', '-d', branchName], workingDirectory: gitRoot.path);
     return;
   }
 
@@ -116,7 +154,7 @@ void main(List<String> args) async {
   }
 
   // 5. 結果を一時ファイルにJSON出力 (git ignore されている .dart_tool 配下に書き出す)
-  final tempDir = Directory(p.join(repoRoot.path, 'monoca_flutter', '.dart_tool', 'dart_pub_upgrade'));
+  final tempDir = Directory(p.join(projectDir.path, '.dart_tool', 'dart_pub_upgrade'));
   if (!tempDir.existsSync()) {
     tempDir.createSync(recursive: true);
   }
@@ -126,9 +164,47 @@ void main(List<String> args) async {
 
   // 6. 変更をコミット
   print('Committing changes...');
-  await Process.run('git', ['add', '--all'], workingDirectory: repoRoot.path);
-  await Process.run('git', ['commit', '-m', 'chore(deps): パッケージの一括アップグレード'], workingDirectory: repoRoot.path);
+  await Process.run('git', ['add', '--all'], workingDirectory: gitRoot.path);
+  await Process.run('git', ['commit', '-m', 'chore(deps): パッケージの一括アップグレード'], workingDirectory: gitRoot.path);
   print('Changes committed successfully to branch $branchName.');
+}
+
+// Gitルートを探して遡る
+Directory? findGitRoot(Directory startDir) {
+  var dir = startDir;
+  while (true) {
+    final gitDir = Directory(p.join(dir.path, '.git'));
+    if (gitDir.existsSync()) {
+      return dir;
+    }
+    final parent = dir.parent;
+    if (parent.path == dir.path) {
+      break;
+    }
+    dir = parent;
+  }
+  return null;
+}
+
+// 適切なアップグレードコマンドの自動判定
+List<String> detectUpgradeCommand(Directory projectDir) {
+  // 1. FVMの構成が存在するかチェック
+  final fvmDir = Directory(p.join(projectDir.path, '.fvm'));
+  if (fvmDir.existsSync()) {
+    return ['fvm', 'flutter', 'pub', 'upgrade', '--major-versions'];
+  }
+  
+  // 2. pubspec.yaml をチェックして Flutter の依存関係があるか判定
+  final pubspecFile = File(p.join(projectDir.path, 'pubspec.yaml'));
+  if (pubspecFile.existsSync()) {
+    final content = pubspecFile.readAsStringSync();
+    if (content.contains('sdk: flutter') || content.contains('flutter:')) {
+      return ['flutter', 'pub', 'upgrade', '--major-versions'];
+    }
+  }
+  
+  // 3. 純粋な Dart プロジェクト
+  return ['dart', 'pub', 'upgrade', '--major-versions'];
 }
 
 // 簡易 YAML parser (pubspec.lock からパッケージ名とバージョンを読み出す)
@@ -140,7 +216,6 @@ Map<String, String> parseLockFile(String content) {
     if (line.startsWith('  ') && !line.startsWith('    ')) {
       currentPackage = line.trim().replaceAll(':', '');
     } else if (line.startsWith('    version: ') && currentPackage != null) {
-      // "2.7.0" のようにダブルクォートで囲まれている場合とそうでない場合に対応
       final rawVersion = line.replaceAll('    version: ', '').trim();
       final version = rawVersion.replaceAll('"', '');
       map[currentPackage] = version;
@@ -178,13 +253,10 @@ String extractDiff(String changelog, String oldVersion) {
   final lines = changelog.split('\n');
   final diffLines = <String>[];
   
-  // バージョン番号表記にマッチする正規表現（例: ## 1.2.0, [1.2.0], # 1.2.0-beta など）
-  // バージョン番号のセパレータ（ピリオド）をエスケープしたパターンを作成
   final escapedOldVersion = RegExp.escape(oldVersion);
   final oldVerRegexp = RegExp('(^|[^0-9.])$escapedOldVersion([^0-9.]|\$)');
 
   for (final line in lines) {
-    // 古いバージョンの見出し行が見つかったら、そこから下の行の解析を打ち切る
     if (oldVerRegexp.hasMatch(line) && 
         (line.startsWith('#') || line.startsWith('[') || line.trim().startsWith('-'))) {
       break;
