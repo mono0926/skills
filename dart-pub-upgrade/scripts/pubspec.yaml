@@ -1,0 +1,13 @@
+name: dart_pub_upgrade
+description: CLI helper for upgrading Dart packages and parsing CHANGELOGs.
+version: 0.0.1
+publish_to: none
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  args: ^2.7.0
+  path: ^1.9.0
+  http: ^1.2.0
+  archive: ^3.6.0
