@@ -115,8 +115,8 @@ void main(List<String> args) async {
     client.close();
   }
 
-  // 5. 結果を一時ファイルにJSON出力
-  final tempDir = Directory(p.join(repoRoot.path, '.dart_pub_upgrade_temp'));
+  // 5. 結果を一時ファイルにJSON出力 (git ignore されている .dart_tool 配下に書き出す)
+  final tempDir = Directory(p.join(repoRoot.path, 'monoca_flutter', '.dart_tool', 'dart_pub_upgrade'));
   if (!tempDir.existsSync()) {
     tempDir.createSync(recursive: true);
   }
