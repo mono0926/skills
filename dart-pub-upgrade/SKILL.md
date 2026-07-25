@@ -27,7 +27,6 @@ description: Upgrade Dart/Flutter packages, resolve warnings/errors, extract CHA
    - **直接依存と間接依存の分類**:
      出力トークン数を効率化しつつ全網羅するため、パッケージを以下のように分類してPR本文を作成してください。
       - **直接依存 (Direct dependencies)**: `pubspec.yaml` に直接記述されているパッケージ。これらについては、元のバージョンから新しいバージョンまでの CHANGELOG の変更内容（特に「破壊的変更」「APIの変更」「重要な機能追加」）を個別に分析・要約し、各パッケージの CHANGELOG リンクを付与して詳細に記載してください。
-       - **【相対的に注目すべき変更のハイライト】**: 直接依存のパッケージの中に、特に影響の大きい破壊的変更、メジャーバージョンの変更、広範囲に影響する非推奨警告、あるいは新機能の追加など「相対的に注目すべき変更」がある場合は、各パッケージの詳細とは別に、**PR本文の冒頭付近（パッケージ一覧の前など）に「🚨 特に注目すべき重要な変更点」などの項目を設け、目立つように別途まとめて記載**してください。
       - **間接依存 (Transitive dependencies)**: 間接的に引き込まれたパッケージ。これらについては詳細な CHANGELOG 要約は省略して構いませんが、**「パッケージ名 (旧バージョン ➔ 新バージョン) と CHANGELOG リンク」のリスト自体は、絶対に省略せず100%すべて書き出してください**。
    - **【リンクのフォーマット：必須ルール】**
      各パッケージの CHANGELOG リンクは、必ず以下の固定URLパターンで組み立ててください。パッケージ名がわかれば、外部APIへの問い合わせや検索なしに確実に生成できます。
@@ -36,9 +35,42 @@ description: Upgrade Dart/Flutter packages, resolve warnings/errors, extract CHA
      ```
      例：`flutter_riverpod` なら `https://pub.dev/packages/flutter_riverpod/changelog`
      **リンクが「わからない」「取得できない」という理由でリンクを省略することは一切認めません。** このURLパターンは常に有効です。
-5. **移行・対応内容のPR記載と起票**:
-   - 行った修正内容（「dart fix による修正」「手動で修正した移行対応」など）を漏れなくプルリクエストの本文に記載します。
-   - AIが修正できずに残した懸念点や、ユーザー側の手動確認が必要な箇所（要相談の内容）がある場合は、PRの本文に「⚠️ 手動対応・要確認が必要な点」として目立つように記載します。
-   - トピックブランチを push し、`gh` コマンドを使用して、作成した要約・詳細・移行対応ログを body に記載した Draft PR を作成します。
-     - 実行コマンド: `env -u GITHUB_TOKEN -u GH_TOKEN gh pr create --draft --title "chore(deps): パッケージの一括アップグレード (YYYY/MM/DD)" --body "<生成した要約、移行ログ、要相談リスト等>"`
+
+5. **PR本文の生成と起票**:
+   - 生成する Draft PR の本文は、出力を高品質かつ一貫させるため、以下の**標準テンプレート**に従って組み立ててください。
+
+   ### 📄 PR本文の標準テンプレート
+
+   ```markdown
+   ## 概要
+   <アップグレードの全体の概要や目的の簡潔な説明>
+
+   ## 🚨 特に注目すべき重要な変更点
+   <!-- 破壊的変更、メジャーアップデート、非推奨の警告だけでなく、利便性が向上する重要な機能追加（New Features）や主要な仕様変更なども含めてハイライトします。特に該当がない場合は「特になし」と記述してください。 -->
+   - **[<package_name>](https://pub.dev/packages/<package_name>/changelog)**: <注目すべき破壊的変更・新機能・主要変更の要約>
+
+   ## 🛠️ 移行・対応内容
+   - <dart fix による自動修正内容、手動で行ったコード修正ログ等>
+
+   ## ⚠️ 手動対応・要確認が必要な点
+   <!-- AIで確信を持って修正できず残した懸念点や、ユーザー側での手動確認・動作テストが必要な事項。なければ「なし」と記述してください。 -->
+   - <要確認項目>
+
+   ## 📦 アップグレードされたパッケージ詳細
+
+   ### 直接依存 (Direct dependencies)
+
+   * **[<package_name>](https://pub.dev/packages/<package_name>/changelog)** (<old_version> ➔ <new_version>)
+     - <CHANGELOG要約・変更点1>
+     - <CHANGELOG要約・変更点2>
+
+   ### 間接依存 (Transitive dependencies)
+
+   - [<package_name>](https://pub.dev/packages/<package_name>/changelog) (<old_version> ➔ <new_version>)
+   - ...
+   ```
+
+   - トピックブランチを push し、`gh` コマンドを使用して、上記テンプレートで生成した内容を body に指定した Draft PR を作成します。
+     - 実行コマンド: `env -u GITHUB_TOKEN -u GH_TOKEN gh pr create --draft --title "chore(deps): パッケージの一括アップグレード (YYYY/MM/DD)" --body "<生成したテンプレート本文>"`
 6. `<path_to_project>/.dart_tool/dart_pub_upgrade` ディレクトリなどの一時生成物をクリーンアップします。
+
