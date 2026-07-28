@@ -11,10 +11,9 @@ description: Upgrade Dart/Flutter packages, resolve warnings/errors, extract CHA
 ## フロー
 
 1. **`dart-pub-upgrade` CLI スクリプトの実行**:
-   - 実行コマンド: `dart run <path_to_skill>/scripts/bin/dart_pub_upgrade.dart --path <path_to_project>`
-     - 作業ディレクトリ: Git リポジトリのルート
-     - `<path_to_skill>`: 本 `SKILL.md` が配置されている絶対パス（例: `~/Git/skills/dart-pub-upgrade`）
-     - `<path_to_project>`: アップグレード対象の Dart プロジェクトが存在するサブディレクトリへの相対パス
+   - 実行コマンド: `(cd <path_to_skill>/scripts && dart pub get && dart run bin/dart_pub_upgrade.dart --path "$PWD/<path_to_project>")`
+     - `<path_to_skill>`: 本 `SKILL.md` が配置されているディレクトリへの相対/絶対パス（例: `.skills/dart-pub-upgrade`）
+     - `<path_to_project>`: アップグレード対象の Dart プロジェクトが存在するサブディレクトリへの相対パス（例: `monoca_flutter`）
    - **スクリプトの全自動動作**:
      - `pubspec.lock` の差分からアップグレードされたパッケージを特定。
      - 対象プロジェクト内の全 `pubspec.yaml` を解析し、各パッケージが**直接依存 (`isDirect: true`)** か**間接依存 (`isDirect: false`)** かを自動判定。
