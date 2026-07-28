@@ -44,8 +44,8 @@ description: Upgrade Dart/Flutter packages, resolve warnings/errors, extract CHA
      ```
      例：`flutter_riverpod` ➔ `https://pub.dev/packages/flutter_riverpod/changelog`
 
-5. **Draft PR の起票**:
-   - 生成する Draft PR の本文は、以下の**標準テンプレート**に従って組み立ててください。
+5. **PR の起票**:
+   - 生成する PR の本文は、以下の**標準テンプレート**に従って組み立ててください。
 
    ### 📄 PR本文の標準テンプレート
 
@@ -78,8 +78,12 @@ description: Upgrade Dart/Flutter packages, resolve warnings/errors, extract CHA
    - ...
    ```
 
-   - トピックブランチを remote に push し、`gh` コマンドで Draft PR を作成します。
-     - 実行コマンド: `env -u GITHUB_TOKEN -u GH_TOKEN gh pr create --draft --title "chore(deps): パッケージの一括アップグレード (YYYY/MM/DD)" --body "<生成したテンプレート本文>"`
+   - トピックブランチを remote に push し、`gh` コマンドで PR を起票します。
+     - **「手動対応・要確認が必要な点」に項目・注意事項がある場合**: `--draft` オプションを付与して Draft PR として起票します。
+       - 実行コマンド: `env -u GITHUB_TOKEN -u GH_TOKEN gh pr create --draft --title "chore(deps): パッケージの一括アップグレード (YYYY/MM/DD)" --body "<生成したテンプレート本文>"`
+     - **「手動対応・要確認が必要な点」が「なし」の場合**: `--draft` オプションを外して Ready for review（通常のPR）として起票します。
+       - 実行コマンド: `env -u GITHUB_TOKEN -u GH_TOKEN gh pr create --title "chore(deps): パッケージの一括アップグレード (YYYY/MM/DD)" --body "<生成したテンプレート本文>"`
+
 
 6. **クリーンアップ**:
    - `<path_to_project>/.dart_tool/dart_pub_upgrade` ディレクトリなどの一時生成物を削除します。
