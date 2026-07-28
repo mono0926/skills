@@ -88,3 +88,10 @@ description: Upgrade Dart/Flutter packages, resolve warnings/errors, extract CHA
 
 6. **クリーンアップ**:
    - `<path_to_project>/.dart_tool/dart_pub_upgrade` ディレクトリなどの一時生成物を削除します。
+
+7. **最終出力フォーマット**:
+   - 処理の最後（応答の最終行）に、作成されたプルリクエストの URL を以下の固定フォーマットで必ず出力してください。
+     `PULL_REQUEST_URL: <作成されたPRのURL>`
+   - パッケージの更新がなかった場合や PR が起票されなかった場合は、以下のように出力してください。
+     `PULL_REQUEST_URL: none`
+
