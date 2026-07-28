@@ -1,11 +1,12 @@
 ---
 name: dart-pub-upgrade
-description: Upgrade Dart/Flutter packages, resolve warnings/errors, extract CHANGELOGs, summarize with AI, and create a Draft PR.
+description: Upgrade Dart/Flutter packages, resolve warnings/errors, extract CHANGELOGs, summarize with AI, and create a Pull Request.
 ---
 
 # dart-pub-upgrade
 
-このスキルは、Dart/Flutterパッケージのメジャーバージョンを含む一括アップグレードを行い、コードの自動修復・静的解析による検証を行い、変更点のCHANGELOGを pub.dev から抽出してAIが要約した上で、Draft PR を自動起票するスキルです。
+このスキルは、Dart/Flutterパッケージのメジャーバージョンを含む一括アップグレードを行い、コードの自動修復・静的解析による検証を行い、変更点のCHANGELOGを pub.dev から抽出してAIが要約した上で、プルリクエスト（PR）を自動起票するスキルです。
+
 
 ## フロー
 
