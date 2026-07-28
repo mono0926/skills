@@ -4,39 +4,67 @@ import 'package:args/args.dart';
 import 'package:archive/archive.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
 
 class UpgradedPackage {
   final String name;
   final String oldVersion;
   final String newVersion;
+  final bool isDirect;
   String? changelogDiff;
 
   UpgradedPackage({
     required this.name,
     required this.oldVersion,
     required this.newVersion,
+    required this.isDirect,
   });
 
   Map<String, dynamic> toJson() => {
         'name': name,
         'oldVersion': oldVersion,
         'newVersion': newVersion,
+        'isDirect': isDirect,
         'changelogDiff': changelogDiff,
       };
 }
 
 void main(List<String> args) async {
   final parser = ArgParser()
+    ..addFlag(
+      'help',
+      abbr: 'h',
+      negatable: false,
+      help: 'Show usage information.',
+    )
     ..addOption(
       'path',
       abbr: 'p',
       defaultsTo: '.',
       help: 'Path to the Dart/Flutter project directory containing pubspec.yaml/pubspec.lock.',
+    )
+    ..addFlag(
+      'fix',
+      defaultsTo: true,
+      help: 'Automatically run dart fix after upgrading.',
+    )
+    ..addFlag(
+      'analyze',
+      defaultsTo: true,
+      help: 'Automatically run dart analyze after upgrading.',
     );
 
   final argResults = parser.parse(args);
+  if (argResults['help'] as bool) {
+    print('Usage: dart_pub_upgrade [options]\n');
+    print(parser.usage);
+    exit(0);
+  }
+
   final projectPath = argResults['path'] as String;
-  
+  final runFix = argResults['fix'] as bool;
+  final runAnalyze = argResults['analyze'] as bool;
+
   final currentDir = Directory.current;
   final projectDir = Directory(p.canonicalize(p.join(currentDir.path, projectPath)));
 
@@ -70,6 +98,10 @@ void main(List<String> args) async {
     stderr.writeln('Error: You have uncommitted changes. Please commit or stash them first.');
     exit(1);
   }
+
+  // 直接依存パッケージの自動収集
+  print('Collecting direct dependencies from project pubspec.yaml files...');
+  final directDepsSet = collectDirectDependencies(projectDir);
 
   // 2. ブランチの作成とチェックアウト
   final dateStr = DateTime.now().toIso8601String().substring(0, 10).replaceAll('-', '');
@@ -116,10 +148,12 @@ void main(List<String> args) async {
   newLockMap.forEach((package, newVer) {
     final oldVer = oldLockMap[package];
     if (oldVer != null && oldVer != newVer) {
+      final isDirect = directDepsSet.contains(package);
       upgradedPackages.add(UpgradedPackage(
         name: package,
         oldVersion: oldVer,
         newVersion: newVer,
+        isDirect: isDirect,
       ));
     }
   });
@@ -162,11 +196,49 @@ void main(List<String> args) async {
   tempFile.writeAsStringSync(jsonEncode(upgradedPackages.map((p) => p.toJson()).toList()));
   print('\nChangelog diffs written to ${tempFile.path}');
 
-  // 6. 変更をコミット
-  print('Committing changes...');
+  // 6. アップグレード変更をコミット
+  print('Committing package upgrade changes...');
   await Process.run('git', ['add', '--all'], workingDirectory: gitRoot.path);
   await Process.run('git', ['commit', '-m', 'chore(deps): パッケージの一括アップグレード'], workingDirectory: gitRoot.path);
-  print('Changes committed successfully to branch $branchName.');
+  print('Package upgrade changes committed successfully to branch $branchName.');
+
+  // 7. 自動修正 (dart fix) の実行
+  final isMelos = File(p.join(projectDir.path, 'melos.yaml')).existsSync() ||
+      File(p.join(gitRoot.path, 'melos.yaml')).existsSync();
+
+  if (runFix) {
+    print('\nRunning automatic code fixes (dart fix)...');
+    if (isMelos) {
+      print('Running melos bootstrap & dart fix...');
+      await Process.run('melos', ['bootstrap'], workingDirectory: projectDir.path, runInShell: true);
+      await Process.run('melos', ['exec', '--', 'dart fix --apply'], workingDirectory: projectDir.path, runInShell: true);
+    } else {
+      await Process.run('dart', ['fix', '--apply'], workingDirectory: projectDir.path, runInShell: true);
+    }
+
+    final postFixStatus = await Process.run('git', ['status', '--porcelain'], workingDirectory: gitRoot.path);
+    if (postFixStatus.stdout.toString().trim().isNotEmpty) {
+      print('Committing automatic fixes...');
+      await Process.run('git', ['add', '--all'], workingDirectory: gitRoot.path);
+      await Process.run('git', ['commit', '-m', 'fix(deps): パッケージ変更に伴う自動修正 (dart fix)'], workingDirectory: gitRoot.path);
+      print('Automatic fixes committed.');
+    } else {
+      print('No automatic code fixes were required.');
+    }
+  }
+
+  // 8. 静的解析 (dart analyze) の実行
+  if (runAnalyze) {
+    print('\nRunning static analysis...');
+    final analyzeResult = isMelos
+        ? await Process.run('melos', ['exec', '--', 'dart analyze'], workingDirectory: projectDir.path, runInShell: true)
+        : await Process.run('dart', ['analyze'], workingDirectory: projectDir.path, runInShell: true);
+
+    print(analyzeResult.stdout);
+    if (analyzeResult.stderr.toString().isNotEmpty) {
+      stderr.writeln(analyzeResult.stderr);
+    }
+  }
 }
 
 // Gitルートを探して遡る
@@ -184,6 +256,42 @@ Directory? findGitRoot(Directory startDir) {
     dir = parent;
   }
   return null;
+}
+
+// プロジェクト内のすべての pubspec.yaml から直接依存しているパッケージ名を抽出
+Set<String> collectDirectDependencies(Directory projectDir) {
+  final directDeps = <String>{};
+  final entities = projectDir.listSync(recursive: true, followLinks: false);
+  for (final entity in entities) {
+    if (entity is File && p.basename(entity.path) == 'pubspec.yaml') {
+      final path = entity.path;
+      if (path.contains('/.dart_tool/') ||
+          path.contains('/.fvm/') ||
+          path.contains('/build/') ||
+          path.contains('/.git/')) {
+        continue;
+      }
+      try {
+        final content = entity.readAsStringSync();
+        final yaml = loadYaml(content);
+        if (yaml is Map) {
+          final deps = yaml['dependencies'];
+          if (deps is Map) {
+            for (final key in deps.keys) {
+              directDeps.add(key.toString());
+            }
+          }
+          final devDeps = yaml['dev_dependencies'];
+          if (devDeps is Map) {
+            for (final key in devDeps.keys) {
+              directDeps.add(key.toString());
+            }
+          }
+        }
+      } catch (_) {}
+    }
+  }
+  return directDeps;
 }
 
 // 適切なアップグレードコマンドの自動判定
@@ -265,3 +373,4 @@ String extractDiff(String changelog, String oldVersion) {
   }
   return diffLines.join('\n').trim();
 }
+
