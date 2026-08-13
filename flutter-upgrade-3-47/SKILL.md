@@ -1,6 +1,6 @@
 ---
 name: flutter-upgrade-3-47
-description: Upgrade a Flutter project to Flutter 3.47. Includes official reference URLs (What's new blog, release notes, breaking changes). Handles cases whether Flutter SDK is already upgraded to 3.47 or not. Follows latest flutter create 3.47 template defaults (AGP 9, Built-in Kotlin), applies dart fixes, offers optional design widget migration (migrate_design_widgets), warns about runtime breaking changes (OpenGL ES texture direction, Impeller Desktop text rendering, Semantics), and creates a detailed Pull Request.
+description: Upgrade a Flutter project to Flutter 3.47. Includes official reference URLs (What's new blog, release notes, breaking changes). Handles cases whether Flutter SDK is already upgraded to 3.47 or not. Follows latest flutter create 3.47 template defaults (AGP 9, Built-in Kotlin), updates pubspec.yaml environment SDK bounds (caret specified) & runs melos bs if applicable, applies dart fixes, offers optional design widget migration (migrate_design_widgets), warns about runtime breaking changes (OpenGL ES texture direction, Impeller Desktop text rendering, Semantics), and creates a detailed Pull Request.
 ---
 
 # flutter-upgrade-3-47
@@ -28,11 +28,14 @@ Flutter 3.47（2026年8月リリース）へのプロジェクト追従を以下
 1. **環境確認 & Flutter SDK バージョンの昇格/確認**:
    - すでに 3.47.x の場合: SDK更新処理をスキップ。
    - 未更新の場合: FVM (`.fvmrc` 更新 + `fvm use 3.47.0`) または `flutter upgrade` で 3.47.0 へ昇格。
-2. **`flutter create .` の 3.47 最新テンプレート追従**: AGP 9 / Built-in Kotlin, Android/iOS/Web 構成の更新。
-3. **自動修復 (`dart fix --apply`)**: 機械的なコード修正の適用。
-4. **オプトイン移行 (`migrate_design_widgets`) の対話的提案**: SDKから分離された `material_ui` / `cupertino_ui` パッケージ移行の選択。
-5. **動作変化・ランタイム注意点のチェック報告**: コンパイルエラーにならなくても動作・描画・アクセシビリティが変わる懸念事項の提示。
-6. **Draft PR起票・コミットフォーマット遵守**: `git-commit-formatter` および `gh` CLIを用いた安全な起票。
+2. **`pubspec.yaml` の `environment` バージョン下限引き上げ (caret指定)**:
+   - 最新言語機能を利用可能にするため、Dart SDK および Flutter の下限バージョンを引き上げ。
+   - モノレポ (`Melos`) の場合は `melos bs` で各パッケージの更新を一括反映。
+3. **`flutter create .` の 3.47 最新テンプレート追従**: AGP 9 / Built-in Kotlin, Android/iOS/Web 構成の更新。
+4. **自動修復 (`dart fix --apply`)**: 機械的なコード修正の適用。
+5. **オプトイン移行 (`migrate_design_widgets`) の対話的提案**: SDKから分離された `material_ui` / `cupertino_ui` パッケージ移行の選択。
+6. **動作変化・ランタイム注意点のチェック報告**: コンパイルエラーにならなくても動作・描画・アクセシビリティが変わる懸念事項の提示。
+7. **Draft PR起票・コミットフォーマット遵守**: `git-commit-formatter` および `gh` CLIを用いた安全な起票。
 
 ---
 
@@ -55,31 +58,41 @@ Flutter 3.47（2026年8月リリース）へのプロジェクト追従を以下
    - `feature/mono/3-47-flutter-upgrade` ブランチを作成して切替。
 
 4. **Draft PR の起票**:
-   - 空コミット `git commit --allow-empty -m "chore: start Flutter 3.47 upgrade"` を作成し、push。
+   - 空コミット `git commit --allow-empty -m "chore: start Flutter 3.47 upgrade"` を作成し, push。
    - `env -u GITHUB_TOKEN -u GH_TOKEN gh pr create --draft --title "chore: upgrade Flutter to 3.47" --body "Draft PR for Flutter 3.47 upgrade"` で PR を起票。
 
 ---
 
-### Step 2: `flutter create .` 最新テンプレート (3.47) へのキャッチアップ
+### Step 2: `pubspec.yaml` の `environment` バージョン更新 & `flutter create .` 最新テンプレート追従
 
-1. **テンプレート生成と差分比較**:
+1. **`pubspec.yaml` の `environment` バージョン下限引き上げ (caret指定)**:
+   - 最新の Dart 機能を使えるようにするため、`pubspec.yaml` の `environment.sdk` および `environment.flutter` の指定をアップデートします。
+   - **推奨フォーマット**: caret (`^`) 指定スタイルで Dart SDK の下限を引き上げ。
+     ```yaml
+     environment:
+       sdk: "^3.13.0" # 最新のDart機能を活かせるよう下限を引き上げ (caret指定)
+       flutter: ">=3.47.0 <4.0.0" # または ^3.47.0
+     ```
+
+2. **モノレポ (`Melos`) での一括反映 (`melos bs`)**:
+   - リポジトリが Melos モノレポ構成（`melos.yaml` が存在する場合）の場合：
+     - 各パッケージの `pubspec.yaml` 内の `environment:` 指定を一括更新した上で、`melos bs` (`melos bootstrap`) を実行してパッケージ間のリンク・依存解決を一貫させる。
+
+3. **`flutter create .` テンプレート生成と差分比較**:
    - 一時ディレクトリにて `flutter create --org com.example temp_app` を実行（FVM使用時は `fvm flutter create ...`）。
    - 既存プロジェクトの設定ファイルとテンプレートを比較し、以下の差分を反映：
-2. **Android 構成**:
+4. **Android 構成**:
    - **AGP 9+ & Built-in Kotlin への移行**: `android/build.gradle` や `android/settings.gradle` の Gradle プラグイン定義、Kotlin 設定を Built-in Kotlin 仕様にアップグレード。
-3. **iOS / macOS 構成**:
+5. **iOS / macOS 構成**:
    - Xcode 26 / iOS 26 シミュレータ互換の設定、`Podfile` のプラットフォームバージョン指定の確認。
-4. **Web 構成**:
+6. **Web 構成**:
    - HTML レンダラー参照の削除（CanvasKit / WebAssembly への完全移行）、フォントフォールバックサービスの更新。
-5. **設定ファイル**:
-   - `pubspec.yaml` の SDK 範囲 (`sdk: "^3.13.0"` または `sdk: ">=3.7.0 <4.0.0"`) の更新。
-   - モノレポ (`Melos`) の場合は `melos exec -- flutter pub get` や `melos run analyze` を使用。
 
 ---
 
 ### Step 3: 自動修復 & 依存関係の更新
 
-1. `flutter pub get` を実行。
+1. `flutter pub get` （Melosの場合は `melos bs` または `melos exec -- flutter pub get`）を実行。
 2. `dart fix --apply` を実行して、機械的なコード修正を全適用。
 
 ---
@@ -148,8 +161,9 @@ Flutter 3.47（2026年8月リリース）へのプロジェクト追従を以下
 
 ### 📋 対応内容
 - [x] Flutter SDK 3.47 への追従 (事前に3.47昇格済 / またはFVM・flutter upgradeで昇格)
+- [x] `pubspec.yaml` の `environment` (Dart SDK caret指定 `^3.13.0`) 下限引き上げ
 - [x] `flutter create .` 3.47 テンプレート追従 (AGP 9+, Built-in Kotlin, Android/iOS/Web設定)
-- [x] `dart fix --apply` による自動修復
+- [x] `dart fix --apply` による自動修復 (Melosの場合は `melos bs`)
 - [x] オプトイン機能 (`migrate_design_widgets`): [適用済 / 未適用]
 
 ### ⚠️ ランタイム動作確認・注意事項

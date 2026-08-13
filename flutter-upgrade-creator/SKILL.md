@@ -29,7 +29,7 @@ description: Generate a dedicated Flutter upgrade skill (e.g. flutter-upgrade-3-
    - 指定バージョン（例: Flutter 3.47）の公式発表記事・What's New記事を探して全文およびURLを確認。
 2. **Dart Release Blog**:
    - `https://dart.dev/blog`
-   - Flutterの該当バージョンに同梱されている Dart（例: Dart 3.7 / 3.8 など）の更新情報・ブログ記事を確認。
+   - Flutterの該当バージョンに同梱されている Dart（例: Dart 3.13 / 3.7 / 3.8 など）の更新情報・ブログ記事を確認。
 3. **Breaking Changes**:
    - `https://docs.flutter.dev/release/breaking-changes`
    - 指定バージョンで追加された破壊的変更（非互換なAPI変更、減衰/非推奨 API、削除された機能など）を抽出。
@@ -45,19 +45,22 @@ description: Generate a dedicated Flutter upgrade skill (e.g. flutter-upgrade-3-
 
 1. **一次情報・公式リファレンスURL一覧**:
    - What's New ブログ、Release Notes、Breaking Changes、Dart ブログなどの固定直リンクを収集。
-2. **`flutter create .` テンプレート差分・標準構成**:
-   - 当該バージョンで推奨される設定ファイル記述 (`pubspec.yaml` の sdk 範囲、`analysis_options.yaml`, Android Gradle Plugin / Kotlin / Gradle バージョン, iOS Xcode / Podfile 設定, Web構成など)。
-3. **自動修正コマンド & オプトイン/ベータ機能 (Migration code)**:
+2. **`pubspec.yaml` の `environment` (Dart SDK) バージョン下限方針**:
+   - 最新バージョンのDart言語機能が使えるよう、Dart SDKのバージョン指定を caret (`^`) 形式で引き上げるガイド（例: `sdk: "^3.13.0"`）。
+   - モノレポ (`Melos`) プロジェクトの場合は `melos bs` で各パッケージの更新を一括反映・ブートストラップする手順。
+3. **`flutter create .` テンプレート差分・標準構成**:
+   - 当該バージョンで推奨される設定ファイル記述 (`analysis_options.yaml`, Android Gradle Plugin / Kotlin / Gradle バージョン, iOS Xcode / Podfile 設定, Web構成など)。
+4. **自動修正コマンド & オプトイン/ベータ機能 (Migration code)**:
    - 例: `dart fix --apply --code=migrate_design_widgets`
    - 各オプトイン/ベータ機能について以下を整理：
      - **概要・何が変わるか**
      - **メリット**
      - **デメリット・リスク**
      - **推奨度**（「推奨 (Recommended)」「任意 (Optional)」「慎重・確認推奨 (Caution)」）
-4. **動作変化の懸念点・不安要素（ランタイム影響の警告）**:
+5. **動作変化の懸念点・不安要素（ランタイム影響の警告）**:
    - **コンパイルエラーにならないが挙動が変わる変更点**（UIのデフォルトスタイル変更、イベント伝播の変更、レンダリング/アニメーション仕様変更、廃止予定フラグの変更など）。
    - コンパイルエラーになる明確な Breaking Changes と手動修復パターン。
-5. **PR作成ノウハウ**:
+6. **PR作成ノウハウ**:
    - 変更理由、テンプレート追従、適用したオプトイン機能、確認が必要な懸念事項、参考リンクを網羅するPRテンプレート。
 
 ---
@@ -71,7 +74,7 @@ description: Generate a dedicated Flutter upgrade skill (e.g. flutter-upgrade-3-
 ```markdown
 ---
 name: flutter-upgrade-<major>-<minor>
-description: Upgrade a Flutter project to Flutter <VERSION> (e.g. 3.47). Includes official reference URLs (What's new blog, release notes, breaking changes). Handles cases whether Flutter SDK is already upgraded to <VERSION> or not. Follows latest flutter create template defaults, applies dart fixes, prompts for opt-in migration tools, warns about runtime breaking changes, and creates a detailed Pull Request.
+description: Upgrade a Flutter project to Flutter <VERSION> (e.g. 3.47). Includes official reference URLs (What's new blog, release notes, breaking changes). Handles cases whether Flutter SDK is already upgraded to <VERSION> or not. Follows latest flutter create template defaults, updates pubspec.yaml environment SDK bounds (caret specified) & runs melos bs if applicable, applies dart fixes, prompts for opt-in migration tools, warns about runtime breaking changes, and creates a detailed Pull Request.
 ---
 
 # flutter-upgrade-<major>-<minor>
@@ -106,17 +109,17 @@ description: Upgrade a Flutter project to Flutter <VERSION> (e.g. 3.47). Include
 - **Gitブランチの作成**: (`feature/mono/<VERSION_KEBAB>-upgrade`)
 - **Draft PR起票**: `env -u GITHUB_TOKEN -u GH_TOKEN gh pr create --draft ...` または空コミット起票による Draft PR 作成。
 
-### 2. `flutter create` 最新テンプレートへの追従
-- 一時ディレクトリにて `flutter create --org com.example temp_app` を実行。
-- 既存プロジェクトとの設定ファイルの差分を抽出し、以下を最新標準へ更新：
-  - `pubspec.yaml` の `sdk: "^<DART_VERSION>"` / `flutter: ">=<VERSION>"`
-  - `analysis_options.yaml`
-  - `android/` (Gradle, Android Gradle Plugin, Kotlin バージョン, build.gradle / settings.gradle 構成)
-  - `ios/` (Podfile, Xcode プロジェクト設定)
-  - モノレポ (`Melos`) プロジェクトの場合は `melos exec` / `melos run` を活用。
+### 2. `pubspec.yaml` の `environment` バージョン更新 & `flutter create .` 最新テンプレートへの追従
+- **`pubspec.yaml` の `environment` (Dart SDK caret指定) の更新**:
+  - 最新のDart機能を使えるよう、`environment.sdk` を caret 指定で引き上げる (例: `sdk: "^<DART_VERSION>"` / `flutter: ">=<VERSION> <4.0.0"`).
+- **モノレポ (`Melos`) での一括反映 (`melos bs`)**:
+  - 各パッケージの `pubspec.yaml` を更新後、`melos bs` (`melos bootstrap`) を実行してパッケージ間のリンク・依存を一括更新。
+- **`flutter create .` テンプレート差分追従**:
+  - 一時ディレクトリにて `flutter create --org com.example temp_app` を実行。
+  - `analysis_options.yaml`, `android/` (Gradle Plugin, Kotlin), `ios/` (Xcode, Podfile), `web/` の最新テンプレートへのキャッチアップ。
 
 ### 3. 自動修復とパッケージ依存関係
-- `flutter pub get` の実行
+- `flutter pub get` （Melosの場合は `melos bs` / `melos exec -- flutter pub get`）の実行
 - `dart fix --apply` による機械的修正の適用
 
 ### 4. オプトイン / ベータ機能 / Migration Fix の対話選択
@@ -139,7 +142,7 @@ description: Upgrade a Flutter project to Flutter <VERSION> (e.g. 3.47). Include
 
 ### 7. コミット & PR本文の更新
 - `git-commit-formatter` を活用して Conventional Commits に従ったコミットを作成。
-- 参考リンク、テンプレート追従内容、適用したオプトイン機能、手動確認が必要な動作変更懸念事項を明記した詳細な PR 本文を作成し、PRを更新。
+- 参考リンク、`environment` (Dart SDK) のアップデート内容、テンプレート追従内容、適用したオプトイン機能、手動確認が必要な動作変更懸念事項を明記した詳細な PR 本文を作成し、PRを更新。
 ```
 
 ---
@@ -148,4 +151,5 @@ description: Upgrade a Flutter project to Flutter <VERSION> (e.g. 3.47). Include
 
 1. `/Users/mono/Git/skills/flutter-upgrade-<major>-<minor>/SKILL.md` が正常に生成されていること。
 2. 対象バージョンの公式リファレンスURL群（What's New ブログ・Release Notes・Breaking Changes 等）が埋め込まれていること。
-3. リリースノート・Breaking Changes・`flutter create` テンプレート更新点・オプトイン機能のメリット/デメリット・動作変化注意点が網羅されていること。
+3. `pubspec.yaml` の `environment` 指定 (Dart SDK の caret 指定引き上げ) および Melos プロジェクトでの `melos bs` 一括反映手順が含まれていること。
+4. リリースノート・Breaking Changes・`flutter create` テンプレート更新点・オプトイン機能のメリット/デメリット・動作変化注意点が網羅されていること。
