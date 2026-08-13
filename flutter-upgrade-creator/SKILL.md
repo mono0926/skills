@@ -68,20 +68,26 @@ description: Generate a dedicated Flutter upgrade skill (e.g. flutter-upgrade-3-
 ```markdown
 ---
 name: flutter-upgrade-<major>-<minor>
-description: Upgrade a Flutter project to Flutter <VERSION> (e.g. 3.47). Follows latest flutter create template defaults, applies dart fixes, prompts for opt-in migration tools, warns about runtime breaking changes, and creates a detailed Pull Request.
+description: Upgrade a Flutter project to Flutter <VERSION> (e.g. 3.47). Handles cases whether Flutter SDK is already upgraded to <VERSION> or not. Follows latest flutter create template defaults, applies dart fixes, prompts for opt-in migration tools, warns about runtime breaking changes, and creates a detailed Pull Request.
 ---
 
 # flutter-upgrade-<major>-<minor>
 
-このスキルは、Flutterプロジェクトを **Flutter <VERSION>** へ安全かつスムーズに追従・アップグレードするための専用スキルです。
+このスキルは、Flutterプロジェクトを **Flutter <VERSION>** へ安全かつスムーズに追従・アップグレードするための専用スキルです。すでにローカル環境/FVMが <VERSION> に更新済みの場合でも、未更新の場合でもスムーズに対応します。
 
 ## 🚀 実行フロー
 
-### 1. 準備 & トピックブランチ・Draft PR作成
-- FVMの確認 (`.fvmrc` / `.fvm/fvm_config.json`)。FVM利用時は `fvm use <VERSION>` を提案・実行。
-- バージョン切り替え確認 (`flutter --version`)。
-- Gitブランチの切替 (`feature/mono/<VERSION_KEBAB>-upgrade`)
-- `env -u GITHUB_TOKEN -u GH_TOKEN gh pr create --draft ...` または空コミット起票による Draft PR 作成。
+### 1. 環境確認・Flutter SDK 昇格 / FVM 切り替え & Draft PR作成
+- **現在の SDK バージョンおよび FVM 設定を確認**:
+  - `flutter --version` および `.fvmrc` の有無を確認。
+- **バージョン昇格 / スキップ分岐**:
+  - **ケース A: すでに <VERSION> に更新済みの場合**:
+    - 「Flutter SDK はすでに <VERSION> に達しています」と出力し、昇格処理をスキップ。
+  - **ケース B: まだ旧バージョンの場合**:
+    - **FVM利用時**: `.fvmrc` を `<VERSION>.0` に更新し `fvm use <VERSION>.0` を実行。
+    - **グローバル Flutter 利用時**: ユーザー案内後に `flutter upgrade` を実行（または FVM 提案）。
+- **Gitブランチの作成**: (`feature/mono/<VERSION_KEBAB>-upgrade`)
+- **Draft PR起票**: `env -u GITHUB_TOKEN -u GH_TOKEN gh pr create --draft ...` または空コミット起票による Draft PR 作成。
 
 ### 2. `flutter create` 最新テンプレートへの追従
 - 一時ディレクトリにて `flutter create --org com.example temp_app` を実行。

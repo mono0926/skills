@@ -1,11 +1,11 @@
 ---
 name: flutter-upgrade-3-47
-description: Upgrade a Flutter project to Flutter 3.47. Follows latest flutter create 3.47 template defaults (AGP 9, Built-in Kotlin), applies dart fixes, offers optional design widget migration (migrate_design_widgets), warns about runtime breaking changes (OpenGL ES texture direction, Impeller Desktop text rendering, Semantics), and creates a detailed Pull Request.
+description: Upgrade a Flutter project to Flutter 3.47. Handles cases whether Flutter SDK is already upgraded to 3.47 or not. Follows latest flutter create 3.47 template defaults (AGP 9, Built-in Kotlin), applies dart fixes, offers optional design widget migration (migrate_design_widgets), warns about runtime breaking changes (OpenGL ES texture direction, Impeller Desktop text rendering, Semantics), and creates a detailed Pull Request.
 ---
 
 # flutter-upgrade-3-47
 
-このスキルは、Flutterプロジェクトを **Flutter 3.47** へ安全かつスムーズに追従・アップグレードするための専用スキルです。
+このスキルは、Flutterプロジェクトを **Flutter 3.47** へ安全かつスムーズに追従・アップグレードするための専用スキルです。すでにローカル環境/FVMが 3.47 に更新済みの場合でも、未更新の場合でもスムーズに対応します。
 
 ---
 
@@ -13,25 +13,36 @@ description: Upgrade a Flutter project to Flutter 3.47. Follows latest flutter c
 
 Flutter 3.47（2026年8月リリース）へのプロジェクト追従を以下のステップで自動化・サポートします。
 
-1. **`flutter create .` の 3.47 最新テンプレート追従**: AGP 9 / Built-in Kotlin, Android/iOS/Web 構成の更新。
-2. **自動修復 (`dart fix --apply`)**: 機械的なコード修正の適用。
-3. **オプトイン移行 (`migrate_design_widgets`) の対話的提案**: SDKから分離された `material_ui` / `cupertino_ui` パッケージ移行の選択。
-4. **動作変化・ランタイム注意点のチェック報告**: コンパイルエラーにならなくても動作・描画・アクセシビリティが変わる懸念事項の提示。
-5. **Draft PR起票・コミットフォーマット遵守**: `git-commit-formatter` および `gh` CLIを用いた安全な起票。
+1. **環境確認 & Flutter SDK バージョンの昇格/確認**:
+   - すでに 3.47.x の場合: SDK更新処理をスキップ。
+   - 未更新の場合: FVM (`.fvmrc` 更新 + `fvm use 3.47.0`) または `flutter upgrade` で 3.47.0 へ昇格。
+2. **`flutter create .` の 3.47 最新テンプレート追従**: AGP 9 / Built-in Kotlin, Android/iOS/Web 構成の更新。
+3. **自動修復 (`dart fix --apply`)**: 機械的なコード修正の適用。
+4. **オプトイン移行 (`migrate_design_widgets`) の対話的提案**: SDKから分離された `material_ui` / `cupertino_ui` パッケージ移行の選択。
+5. **動作変化・ランタイム注意点のチェック報告**: コンパイルエラーにならなくても動作・描画・アクセシビリティが変わる懸念事項の提示。
+6. **Draft PR起票・コミットフォーマット遵守**: `git-commit-formatter` および `gh` CLIを用いた安全な起票。
 
 ---
 
 ## 🚀 実行手順ワークフロー
 
-### Step 1: 準備 & FVM確認・トピックブランチ/Draft PR作成
+### Step 1: 環境確認・Flutter SDK 昇格 / FVM 切り替え & Draft PR作成
 
-1. **FVM / Flutter SDK バージョン確認**:
-   - プロジェクトルートの `.fvmrc` または `.fvm/fvm_config.json` の有無を確認。
-   - FVM使用時は `fvm use 3.47.0` を提案・実行。
-   - `flutter --version` で Flutter 3.47.x であることを確認。
-2. **Gitブランチの作成**:
+1. **現在の Flutter SDK バージョンおよび FVM 設定の確認**:
+   - プロジェクトルートの `.fvmrc` や `.fvm/fvm_config.json` の有無を確認。
+   - `flutter --version` (FVM使用時は `fvm flutter --version`) を実行。
+
+2. **バージョン昇格 / スキップの分岐処理**:
+   - **ケース A: すでに Flutter 3.47.x に更新済みの場合**:
+     - 「Flutter SDK はすでに 3.47.x に達しています」とログ・報告を出力し、SDK更新処理はスキップ。
+   - **ケース B: まだ旧バージョン（例: 3.44 や 3.41 等）の場合**:
+     - **FVM利用時**: `.fvmrc` のバージョン指定を `"3.47.0"` に書き換え、`fvm use 3.47.0` (または `fvm install 3.47.0`) を実行。
+     - **グローバル Flutter 利用時**: ユーザーに状況を案内した上で `flutter upgrade` を実行して 3.47.0 へアップデート（または FVM 導入を提案）。
+
+3. **Gitブランチの作成**:
    - `feature/mono/3-47-flutter-upgrade` ブランチを作成して切替。
-3. **Draft PR の起票**:
+
+4. **Draft PR の起票**:
    - 空コミット `git commit --allow-empty -m "chore: start Flutter 3.47 upgrade"` を作成し、push。
    - `env -u GITHUB_TOKEN -u GH_TOKEN gh pr create --draft --title "chore: upgrade Flutter to 3.47" --body "Draft PR for Flutter 3.47 upgrade"` で PR を起票。
 
@@ -40,7 +51,7 @@ Flutter 3.47（2026年8月リリース）へのプロジェクト追従を以下
 ### Step 2: `flutter create .` 最新テンプレート (3.47) へのキャッチアップ
 
 1. **テンプレート生成と差分比較**:
-   - 一時ディレクトリにて `flutter create --org com.example temp_app` を実行。
+   - 一時ディレクトリにて `flutter create --org com.example temp_app` を実行（FVM使用時は `fvm flutter create ...`）。
    - 既存プロジェクトの設定ファイルとテンプレートを比較し、以下の差分を反映：
 2. **Android 構成**:
    - **AGP 9+ & Built-in Kotlin への移行**: `android/build.gradle` や `android/settings.gradle` の Gradle プラグイン定義、Kotlin 設定を Built-in Kotlin 仕様にアップグレード。
@@ -119,7 +130,7 @@ Flutter 3.47（2026年8月リリース）へのプロジェクト追従を以下
 ## 🚀 Flutter 3.47 アップグレード対応
 
 ### 📋 対応内容
-- [x] Flutter SDK 3.47 への追従
+- [x] Flutter SDK 3.47 への追従 (事前に3.47昇格済 / またはFVM・flutter upgradeで昇格)
 - [x] `flutter create .` 3.47 テンプレート追従 (AGP 9+, Built-in Kotlin, Android/iOS/Web設定)
 - [x] `dart fix --apply` による自動修復
 - [x] オプトイン機能 (`migrate_design_widgets`): [適用済 / 未適用]
