@@ -1,6 +1,6 @@
 ---
 name: flutter-upgrade-3-47
-description: Upgrade a Flutter project to Flutter 3.47. Includes official reference URLs (What's new blog, release notes, breaking changes). Handles cases whether Flutter SDK is already upgraded to 3.47 or not. Follows latest flutter create 3.47 template defaults (AGP 9, Built-in Kotlin), updates pubspec.yaml environment SDK bounds (caret specified) & runs melos bs if applicable, applies dart fixes, offers optional design widget migration (migrate_design_widgets), warns about runtime breaking changes (OpenGL ES texture direction, Impeller Desktop text rendering, Semantics), and creates a detailed Pull Request.
+description: Upgrade a Flutter project to Flutter 3.47. Includes official reference URLs (What's new blog, release notes, breaking changes). Handles cases whether Flutter SDK is already upgraded to 3.47 or not. Follows latest flutter create 3.47 template defaults (AGP 9, Built-in Kotlin), updates pubspec.yaml environment SDK & Flutter bounds (caret specified ^3.13.0 & ^3.47.0) & runs melos bs if applicable, applies dart fixes, offers optional design widget migration (migrate_design_widgets), warns about runtime breaking changes (OpenGL ES texture direction, Impeller Desktop text rendering, Semantics), and creates a detailed Pull Request.
 ---
 
 # flutter-upgrade-3-47
@@ -28,8 +28,8 @@ Flutter 3.47（2026年8月リリース）へのプロジェクト追従を以下
 1. **環境確認 & Flutter SDK バージョンの昇格/確認**:
    - すでに 3.47.x の場合: SDK更新処理をスキップ。
    - 未更新の場合: FVM (`.fvmrc` 更新 + `fvm use 3.47.0`) または `flutter upgrade` で 3.47.0 へ昇格。
-2. **`pubspec.yaml` の `environment` バージョン下限引き上げ (caret指定)**:
-   - 最新言語機能を利用可能にするため、Dart SDK および Flutter の下限バージョンを引き上げ。
+2. **`pubspec.yaml` の `environment` バージョン下限引き上げ (sdk, flutterともにcaret指定)**:
+   - 最新言語機能・SDK機能を利用可能にするため、Dart SDK および Flutter の指定を caret 形式で引き上げ (`sdk: "^3.13.0"`, `flutter: "^3.47.0"`)。
    - モノレポ (`Melos`) の場合は `melos bs` で各パッケージの更新を一括反映。
 3. **`flutter create .` の 3.47 最新テンプレート追従**: AGP 9 / Built-in Kotlin, Android/iOS/Web 構成の更新。
 4. **自動修復 (`dart fix --apply`)**: 機械的なコード修正の適用。
@@ -66,12 +66,11 @@ Flutter 3.47（2026年8月リリース）へのプロジェクト追従を以下
 ### Step 2: `pubspec.yaml` の `environment` バージョン更新 & `flutter create .` 最新テンプレート追従
 
 1. **`pubspec.yaml` の `environment` バージョン下限引き上げ (caret指定)**:
-   - 最新の Dart 機能を使えるようにするため、`pubspec.yaml` の `environment.sdk` および `environment.flutter` の指定をアップデートします。
-   - **推奨フォーマット**: caret (`^`) 指定スタイルで Dart SDK の下限を引き上げ。
+   - 最新の Dart / Flutter 機能を使えるようにするため、`pubspec.yaml` の `environment.sdk` および `environment.flutter` を caret (`^`) 指定スタイルで更新します。
      ```yaml
      environment:
        sdk: "^3.13.0" # 最新のDart機能を活かせるよう下限を引き上げ (caret指定)
-       flutter: ">=3.47.0 <4.0.0" # または ^3.47.0
+       flutter: "^3.47.0" # Flutterバージョンも caret 指定
      ```
 
 2. **モノレポ (`Melos`) での一括反映 (`melos bs`)**:
@@ -161,7 +160,7 @@ Flutter 3.47（2026年8月リリース）へのプロジェクト追従を以下
 
 ### 📋 対応内容
 - [x] Flutter SDK 3.47 への追従 (事前に3.47昇格済 / またはFVM・flutter upgradeで昇格)
-- [x] `pubspec.yaml` の `environment` (Dart SDK caret指定 `^3.13.0`) 下限引き上げ
+- [x] `pubspec.yaml` の `environment` (sdk: `^3.13.0`, flutter: `^3.47.0` caret指定) 下限引き上げ
 - [x] `flutter create .` 3.47 テンプレート追従 (AGP 9+, Built-in Kotlin, Android/iOS/Web設定)
 - [x] `dart fix --apply` による自動修復 (Melosの場合は `melos bs`)
 - [x] オプトイン機能 (`migrate_design_widgets`): [適用済 / 未適用]
