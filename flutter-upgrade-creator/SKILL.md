@@ -19,13 +19,14 @@ description: Generate a dedicated Flutter upgrade skill (e.g. flutter-upgrade-3-
 
 指定されたバージョン（例: `VERSION = 3.47` または `3.47.0`）を受け取ったら、以下の順序で情報を調査・抽出し、専用Skillを作成します。
 
-### Step 1: 公式リリース情報・ドキュメントの網羅的リサーチ
+### Step 1: 公式リリース情報・一次ドキュメントの網羅的リサーチ
 
 以下のURLおよび関連ページを `read_url_content` や `search_web` で読み込み・解析します。
 
-1. **Flutter Release Blog**:
+1. **Flutter Announcement Blog (What's New)**:
+   - `https://flutter.dev/blog/whats-new-in-flutter-<major>-<minor>` (例: `https://flutter.dev/blog/whats-new-in-flutter-3-47`) または `https://blog.flutter.dev/whats-new-in-flutter-<major>-<minor>`
    - `https://flutter.dev/blog?category=release`
-   - 指定バージョン（例: Flutter 3.47）の公式発表記事を探して全文確認。
+   - 指定バージョン（例: Flutter 3.47）の公式発表記事・What's New記事を探して全文およびURLを確認。
 2. **Dart Release Blog**:
    - `https://dart.dev/blog`
    - Flutterの該当バージョンに同梱されている Dart（例: Dart 3.7 / 3.8 など）の更新情報・ブログ記事を確認。
@@ -40,22 +41,24 @@ description: Generate a dedicated Flutter upgrade skill (e.g. flutter-upgrade-3-
 
 ### Step 2: 収集情報の分析・分類
 
-リサーチした情報を以下の4つのカテゴリに整理します。
+リサーチした情報を以下の5つのカテゴリに整理します。
 
-1. **`flutter create .` テンプレート差分・標準構成**:
+1. **一次情報・公式リファレンスURL一覧**:
+   - What's New ブログ、Release Notes、Breaking Changes、Dart ブログなどの固定直リンクを収集。
+2. **`flutter create .` テンプレート差分・標準構成**:
    - 当該バージョンで推奨される設定ファイル記述 (`pubspec.yaml` の sdk 範囲、`analysis_options.yaml`, Android Gradle Plugin / Kotlin / Gradle バージョン, iOS Xcode / Podfile 設定, Web構成など)。
-2. **自動修正コマンド & オプトイン/ベータ機能 (Migration code)**:
+3. **自動修正コマンド & オプトイン/ベータ機能 (Migration code)**:
    - 例: `dart fix --apply --code=migrate_design_widgets`
    - 各オプトイン/ベータ機能について以下を整理：
      - **概要・何が変わるか**
      - **メリット**
      - **デメリット・リスク**
      - **推奨度**（「推奨 (Recommended)」「任意 (Optional)」「慎重・確認推奨 (Caution)」）
-3. **動作変化の懸念点・不安要素（ランタイム影響の警告）**:
+4. **動作変化の懸念点・不安要素（ランタイム影響の警告）**:
    - **コンパイルエラーにならないが挙動が変わる変更点**（UIのデフォルトスタイル変更、イベント伝播の変更、レンダリング/アニメーション仕様変更、廃止予定フラグの変更など）。
    - コンパイルエラーになる明確な Breaking Changes と手動修復パターン。
-4. **PR作成ノウハウ**:
-   - 変更理由、テンプレート追従、適用したオプトイン機能、確認が必要な懸念事項を網羅するPRテンプレート。
+5. **PR作成ノウハウ**:
+   - 変更理由、テンプレート追従、適用したオプトイン機能、確認が必要な懸念事項、参考リンクを網羅するPRテンプレート。
 
 ---
 
@@ -68,12 +71,26 @@ description: Generate a dedicated Flutter upgrade skill (e.g. flutter-upgrade-3-
 ```markdown
 ---
 name: flutter-upgrade-<major>-<minor>
-description: Upgrade a Flutter project to Flutter <VERSION> (e.g. 3.47). Handles cases whether Flutter SDK is already upgraded to <VERSION> or not. Follows latest flutter create template defaults, applies dart fixes, prompts for opt-in migration tools, warns about runtime breaking changes, and creates a detailed Pull Request.
+description: Upgrade a Flutter project to Flutter <VERSION> (e.g. 3.47). Includes official reference URLs (What's new blog, release notes, breaking changes). Handles cases whether Flutter SDK is already upgraded to <VERSION> or not. Follows latest flutter create template defaults, applies dart fixes, prompts for opt-in migration tools, warns about runtime breaking changes, and creates a detailed Pull Request.
 ---
 
 # flutter-upgrade-<major>-<minor>
 
 このスキルは、Flutterプロジェクトを **Flutter <VERSION>** へ安全かつスムーズに追従・アップグレードするための専用スキルです。すでにローカル環境/FVMが <VERSION> に更新済みの場合でも、未更新の場合でもスムーズに対応します。
+
+---
+
+## 📚 一次情報・公式リファレンス (Reference Links)
+
+アップグレード作業時に参照すべき公式の重要情報源一覧です：
+
+- 📢 **What's New in Flutter <VERSION> (Official Blog)**: [https://flutter.dev/blog/whats-new-in-flutter-<major>-<minor>](https://flutter.dev/blog/whats-new-in-flutter-<major>-<minor>)
+- 📝 **Flutter <VERSION>.0 Release Notes**: [https://docs.flutter.dev/release/release-notes/release-notes-<VERSION>.0](https://docs.flutter.dev/release/release-notes/release-notes-<VERSION>.0)
+- ⚠️ **Flutter Breaking Changes**: [https://docs.flutter.dev/release/breaking-changes](https://docs.flutter.dev/release/breaking-changes)
+- 📰 **Flutter Release Category**: [https://flutter.dev/blog?category=release](https://flutter.dev/blog?category=release)
+- 🎯 **Dart Blog**: [https://dart.dev/blog](https://dart.dev/blog)
+
+---
 
 ## 🚀 実行フロー
 
@@ -122,7 +139,7 @@ description: Upgrade a Flutter project to Flutter <VERSION> (e.g. 3.47). Handles
 
 ### 7. コミット & PR本文の更新
 - `git-commit-formatter` を活用して Conventional Commits に従ったコミットを作成。
-- テンプレート追従内容、適用したオプトイン機能、手動確認が必要な動作変更懸念事項を明記した詳細な PR 本文を作成し、PRを更新。
+- 参考リンク、テンプレート追従内容、適用したオプトイン機能、手動確認が必要な動作変更懸念事項を明記した詳細な PR 本文を作成し、PRを更新。
 ```
 
 ---
@@ -130,4 +147,5 @@ description: Upgrade a Flutter project to Flutter <VERSION> (e.g. 3.47). Handles
 ## 🛠 スキル生成の完了条件
 
 1. `/Users/mono/Git/skills/flutter-upgrade-<major>-<minor>/SKILL.md` が正常に生成されていること。
-2. 対象バージョンのリリースノート・Breaking Changes・`flutter create` テンプレート更新点・オプトイン機能のメリット/デメリット・動作変化注意点が網羅されていること。
+2. 対象バージョンの公式リファレンスURL群（What's New ブログ・Release Notes・Breaking Changes 等）が埋め込まれていること。
+3. リリースノート・Breaking Changes・`flutter create` テンプレート更新点・オプトイン機能のメリット/デメリット・動作変化注意点が網羅されていること。

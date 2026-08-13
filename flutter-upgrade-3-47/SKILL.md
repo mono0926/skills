@@ -1,11 +1,23 @@
 ---
 name: flutter-upgrade-3-47
-description: Upgrade a Flutter project to Flutter 3.47. Handles cases whether Flutter SDK is already upgraded to 3.47 or not. Follows latest flutter create 3.47 template defaults (AGP 9, Built-in Kotlin), applies dart fixes, offers optional design widget migration (migrate_design_widgets), warns about runtime breaking changes (OpenGL ES texture direction, Impeller Desktop text rendering, Semantics), and creates a detailed Pull Request.
+description: Upgrade a Flutter project to Flutter 3.47. Includes official reference URLs (What's new blog, release notes, breaking changes). Handles cases whether Flutter SDK is already upgraded to 3.47 or not. Follows latest flutter create 3.47 template defaults (AGP 9, Built-in Kotlin), applies dart fixes, offers optional design widget migration (migrate_design_widgets), warns about runtime breaking changes (OpenGL ES texture direction, Impeller Desktop text rendering, Semantics), and creates a detailed Pull Request.
 ---
 
 # flutter-upgrade-3-47
 
 このスキルは、Flutterプロジェクトを **Flutter 3.47** へ安全かつスムーズに追従・アップグレードするための専用スキルです。すでにローカル環境/FVMが 3.47 に更新済みの場合でも、未更新の場合でもスムーズに対応します。
+
+---
+
+## 📚 一次情報・公式リファレンス (Reference Links)
+
+アップグレード作業時に参照すべき公式の重要情報源一覧です：
+
+- 📢 **What's New in Flutter 3.47 (Official Blog)**: [https://flutter.dev/blog/whats-new-in-flutter-3-47](https://flutter.dev/blog/whats-new-in-flutter-3-47) (または [https://blog.flutter.dev/whats-new-in-flutter-3-47](https://blog.flutter.dev/whats-new-in-flutter-3-47))
+- 📝 **Flutter 3.47.0 Release Notes**: [https://docs.flutter.dev/release/release-notes/release-notes-3.47.0](https://docs.flutter.dev/release/release-notes/release-notes-3.47.0)
+- ⚠️ **Flutter Breaking Changes**: [https://docs.flutter.dev/release/breaking-changes](https://docs.flutter.dev/release/breaking-changes)
+- 📰 **Flutter Release Announcements Category**: [https://flutter.dev/blog?category=release](https://flutter.dev/blog?category=release)
+- 🎯 **Dart Blog**: [https://dart.dev/blog](https://dart.dev/blog)
 
 ---
 
@@ -128,6 +140,11 @@ Flutter 3.47（2026年8月リリース）へのプロジェクト追従を以下
 
 ```markdown
 ## 🚀 Flutter 3.47 アップグレード対応
+
+### 📚 参考リンク (Reference Links)
+- [What's New in Flutter 3.47](https://flutter.dev/blog/whats-new-in-flutter-3-47)
+- [Flutter 3.47.0 Release Notes](https://docs.flutter.dev/release/release-notes/release-notes-3.47.0)
+- [Flutter Breaking Changes](https://docs.flutter.dev/release/breaking-changes)
 
 ### 📋 対応内容
 - [x] Flutter SDK 3.47 への追従 (事前に3.47昇格済 / またはFVM・flutter upgradeで昇格)
