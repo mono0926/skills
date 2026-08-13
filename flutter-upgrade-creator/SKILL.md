@@ -45,9 +45,10 @@ description: Generate a dedicated Flutter upgrade skill (e.g. flutter-upgrade-3-
 
 1. **一次情報・公式リファレンスURL一覧**:
    - What's New ブログ、Release Notes、Breaking Changes、Dart ブログなどの固定直リンクを収集。
-2. **`pubspec.yaml` の `environment` (sdk, flutter) caret指定バージョン下限方針**:
-   - 最新バージョンのDart・Flutter機能が使えるよう、`environment.sdk` および `environment.flutter` のバージョン指定を caret (`^`) 形式で引き上げるガイド（例: `sdk: "^3.13.0"`, `flutter: "^3.47.0"`）。
-   - モノレポ (`Melos`) プロジェクトの場合は `melos bs` で各パッケージの更新を一括反映・ブートストラップする手順。
+2. **`environment` (sdk, flutter) caret指定バージョン下限更新方針**:
+   - 通常プロジェクト: `pubspec.yaml` の `environment` 指定 (例: `sdk: "^3.13.0"`, `flutter: "^3.47.0"`) の更新。
+   - Melos モノレポ: ルート `pubspec.yaml` の `melos.bootstrap.environment` 指定の更新。
+   - その後 `melos bs` で配下全パッケージの指定を一括適用・更新する手順。
 3. **`flutter create .` テンプレート差分・標準構成**:
    - 当該バージョンで推奨される設定ファイル記述 (`analysis_options.yaml`, Android Gradle Plugin / Kotlin / Gradle バージョン, iOS Xcode / Podfile 設定, Web構成など)。
 4. **自動修正コマンド & オプトイン/ベータ機能 (Migration code)**:
@@ -74,7 +75,7 @@ description: Generate a dedicated Flutter upgrade skill (e.g. flutter-upgrade-3-
 ```markdown
 ---
 name: flutter-upgrade-<major>-<minor>
-description: Upgrade a Flutter project to Flutter <VERSION> (e.g. 3.47). Includes official reference URLs (What's new blog, release notes, breaking changes). Handles cases whether Flutter SDK is already upgraded to <VERSION> or not. Follows latest flutter create template defaults, updates pubspec.yaml environment SDK & Flutter bounds with caret notation (^3.13.0 & ^3.47.0) & runs melos bs if applicable, applies dart fixes, prompts for opt-in migration tools, warns about runtime breaking changes, and creates a detailed Pull Request.
+description: Upgrade a Flutter project to Flutter <VERSION> (e.g. 3.47). Includes official reference URLs (What's new blog, release notes, breaking changes). Handles cases whether Flutter SDK is already upgraded to <VERSION> or not. Follows latest flutter create template defaults, updates pubspec.yaml environment SDK & Flutter bounds with caret notation (^3.13.0 & ^3.47.0), configures melos.bootstrap.environment & runs melos bs if applicable, applies dart fixes, prompts for opt-in migration tools, warns about runtime breaking changes, and creates a detailed Pull Request.
 ---
 
 # flutter-upgrade-<major>-<minor>
@@ -109,11 +110,19 @@ description: Upgrade a Flutter project to Flutter <VERSION> (e.g. 3.47). Include
 - **Gitブランチの作成**: (`feature/mono/<VERSION_KEBAB>-upgrade`)
 - **Draft PR起票**: `env -u GITHUB_TOKEN -u GH_TOKEN gh pr create --draft ...` または空コミット起票による Draft PR 作成。
 
-### 2. `pubspec.yaml` の `environment` バージョン更新 & `flutter create .` 最新テンプレートへの追従
-- **`pubspec.yaml` の `environment` (sdk, flutterともにcaret指定) の更新**:
-  - 最新のDart・Flutter機能を使えるよう、`environment.sdk` および `environment.flutter` を caret 指定で引き上げる (例: `sdk: "^<DART_VERSION>"`, `flutter: "^<VERSION>.0"`).
-- **モノレポ (`Melos`) での一括反映 (`melos bs`)**:
-  - 各パッケージの `pubspec.yaml` を更新後、`melos bs` (`melos bootstrap`) を実行してパッケージ間のリンク・依存を一括更新。
+### 2. `environment` バージョン更新 & `flutter create .` 最新テンプレートへの追従
+- **通常プロジェクトの場合**:
+  - `pubspec.yaml` の `environment` 指定 (sdk, flutter ともに caret 指定 `^`) の更新 (例: `sdk: "^<DART_VERSION>"`, `flutter: "^<VERSION>.0"`).
+- **モノレポ (`Melos`) プロジェクトの場合**:
+  - ルート `pubspec.yaml` の `melos.bootstrap.environment` に以下を設定：
+    ```yaml
+    melos:
+      bootstrap:
+        environment:
+          sdk: "^<DART_VERSION>"
+          flutter: "^<VERSION>.0"
+    ```
+  - その後 `melos bs` (`melos bootstrap`) を実行して、各パッケージの `environment` 指定を一括自動適用・更新。
 - **`flutter create .` テンプレート差分追従**:
   - 一時ディレクトリにて `flutter create --org com.example temp_app` を実行。
   - `analysis_options.yaml`, `android/` (Gradle Plugin, Kotlin), `ios/` (Xcode, Podfile), `web/` の最新テンプレートへのキャッチアップ。
@@ -142,7 +151,7 @@ description: Upgrade a Flutter project to Flutter <VERSION> (e.g. 3.47). Include
 
 ### 7. コミット & PR本文の更新
 - `git-commit-formatter` を活用して Conventional Commits に従ったコミットを作成。
-- 参考リンク、`environment` (sdk, flutter の caret 指定) のアップデート内容、テンプレート追従内容、適用したオプトイン機能、手動確認が必要な動作変更懸念事項を明記した詳細な PR 本文を作成し、PRを更新。
+- 参考リンク、`environment` (sdk, flutter の caret 指定、Melos時の `melos.bootstrap.environment` 指定) のアップデート内容、テンプレート追従内容、適用したオプトイン機能、手動確認が必要な動作変更懸念事項を明記した詳細な PR 本文を作成し、PRを更新。
 ```
 
 ---
@@ -151,5 +160,5 @@ description: Upgrade a Flutter project to Flutter <VERSION> (e.g. 3.47). Include
 
 1. `/Users/mono/Git/skills/flutter-upgrade-<major>-<minor>/SKILL.md` が正常に生成されていること。
 2. 対象バージョンの公式リファレンスURL群（What's New ブログ・Release Notes・Breaking Changes 等）が埋め込まれていること。
-3. `pubspec.yaml` の `environment` 指定 (sdk, flutter ともに caret 指定 `^` による引き上げ) および Melos プロジェクトでの `melos bs` 一括反映手順が含まれていること。
+3. `pubspec.yaml` の `environment` 指定 (sdk, flutter ともに caret 指定 `^` による引き上げ) および Melos プロジェクトでの `melos.bootstrap.environment` 設定と `melos bs` 一括反映手順が含まれていること。
 4. リリースノート・Breaking Changes・`flutter create` テンプレート更新点・オプトイン機能のメリット/デメリット・動作変化注意点が網羅されていること。

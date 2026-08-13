@@ -1,6 +1,6 @@
 ---
 name: flutter-upgrade-3-47
-description: Upgrade a Flutter project to Flutter 3.47. Includes official reference URLs (What's new blog, release notes, breaking changes). Handles cases whether Flutter SDK is already upgraded to 3.47 or not. Follows latest flutter create 3.47 template defaults (AGP 9, Built-in Kotlin), updates pubspec.yaml environment SDK & Flutter bounds (caret specified ^3.13.0 & ^3.47.0) & runs melos bs if applicable, applies dart fixes, offers optional design widget migration (migrate_design_widgets), warns about runtime breaking changes (OpenGL ES texture direction, Impeller Desktop text rendering, Semantics), and creates a detailed Pull Request.
+description: Upgrade a Flutter project to Flutter 3.47. Includes official reference URLs (What's new blog, release notes, breaking changes). Handles cases whether Flutter SDK is already upgraded to 3.47 or not. Follows latest flutter create 3.47 template defaults (AGP 9, Built-in Kotlin), updates pubspec.yaml environment SDK & Flutter bounds (caret specified ^3.13.0 & ^3.47.0), configures melos.bootstrap.environment & runs melos bs if applicable, applies dart fixes, offers optional design widget migration (migrate_design_widgets), warns about runtime breaking changes (OpenGL ES texture direction, Impeller Desktop text rendering, Semantics), and creates a detailed Pull Request.
 ---
 
 # flutter-upgrade-3-47
@@ -28,9 +28,9 @@ Flutter 3.47（2026年8月リリース）へのプロジェクト追従を以下
 1. **環境確認 & Flutter SDK バージョンの昇格/確認**:
    - すでに 3.47.x の場合: SDK更新処理をスキップ。
    - 未更新の場合: FVM (`.fvmrc` 更新 + `fvm use 3.47.0`) または `flutter upgrade` で 3.47.0 へ昇格。
-2. **`pubspec.yaml` の `environment` バージョン下限引き上げ (sdk, flutterともにcaret指定)**:
-   - 最新言語機能・SDK機能を利用可能にするため、Dart SDK および Flutter の指定を caret 形式で引き上げ (`sdk: "^3.13.0"`, `flutter: "^3.47.0"`)。
-   - モノレポ (`Melos`) の場合は `melos bs` で各パッケージの更新を一括反映。
+2. **`pubspec.yaml` / `melos` の `environment` バージョン下限引き上げ (caret指定)**:
+   - 通常プロジェクト: `pubspec.yaml` の `environment:` (`sdk: "^3.13.0"`, `flutter: "^3.47.0"`) を更新。
+   - Melos モノレポ: ルート `pubspec.yaml` の `melos.bootstrap.environment` を更新し、`melos bs` で配下全パッケージへ一括自動適用。
 3. **`flutter create .` の 3.47 最新テンプレート追従**: AGP 9 / Built-in Kotlin, Android/iOS/Web 構成の更新。
 4. **自動修復 (`dart fix --apply`)**: 機械的なコード修正の適用。
 5. **オプトイン移行 (`migrate_design_widgets`) の対話的提案**: SDKから分離された `material_ui` / `cupertino_ui` パッケージ移行の選択。
@@ -63,19 +63,26 @@ Flutter 3.47（2026年8月リリース）へのプロジェクト追従を以下
 
 ---
 
-### Step 2: `pubspec.yaml` の `environment` バージョン更新 & `flutter create .` 最新テンプレート追従
+### Step 2: `environment` バージョン更新 & `flutter create .` 最新テンプレート追従
 
-1. **`pubspec.yaml` の `environment` バージョン下限引き上げ (caret指定)**:
-   - 最新の Dart / Flutter 機能を使えるようにするため、`pubspec.yaml` の `environment.sdk` および `environment.flutter` を caret (`^`) 指定スタイルで更新します。
+1. **通常プロジェクトの場合**:
+   - `pubspec.yaml` の `environment` 指定を caret (`^`) 形式で更新。
      ```yaml
      environment:
-       sdk: "^3.13.0" # 最新のDart機能を活かせるよう下限を引き上げ (caret指定)
-       flutter: "^3.47.0" # Flutterバージョンも caret 指定
+       sdk: "^3.13.0" # 最新Dart言語機能を活かせるよう引き上げ
+       flutter: "^3.47.0"
      ```
 
-2. **モノレポ (`Melos`) での一括反映 (`melos bs`)**:
-   - リポジトリが Melos モノレポ構成（`melos.yaml` が存在する場合）の場合：
-     - 各パッケージの `pubspec.yaml` 内の `environment:` 指定を一括更新した上で、`melos bs` (`melos bootstrap`) を実行してパッケージ間のリンク・依存解決を一貫させる。
+2. **モノレポ (`Melos`) プロジェクトの場合**:
+   - ルートの `pubspec.yaml` (または `melos.yaml`) の `melos.bootstrap.environment` を更新：
+     ```yaml
+     melos:
+       bootstrap:
+         environment:
+           sdk: "^3.13.0"
+           flutter: "^3.47.0"
+     ```
+   - その後 `melos bs` (`melos bootstrap`) を実行して、全サブパッケージの `environment` 指定を一括更新・ブートストラップ。
 
 3. **`flutter create .` テンプレート生成と差分比較**:
    - 一時ディレクトリにて `flutter create --org com.example temp_app` を実行（FVM使用時は `fvm flutter create ...`）。
@@ -160,7 +167,7 @@ Flutter 3.47（2026年8月リリース）へのプロジェクト追従を以下
 
 ### 📋 対応内容
 - [x] Flutter SDK 3.47 への追従 (事前に3.47昇格済 / またはFVM・flutter upgradeで昇格)
-- [x] `pubspec.yaml` の `environment` (sdk: `^3.13.0`, flutter: `^3.47.0` caret指定) 下限引き上げ
+- [x] `environment` (sdk: `^3.13.0`, flutter: `^3.47.0`) の更新 (Melos時は `melos.bootstrap.environment` 経由)
 - [x] `flutter create .` 3.47 テンプレート追従 (AGP 9+, Built-in Kotlin, Android/iOS/Web設定)
 - [x] `dart fix --apply` による自動修復 (Melosの場合は `melos bs`)
 - [x] オプトイン機能 (`migrate_design_widgets`): [適用済 / 未適用]
