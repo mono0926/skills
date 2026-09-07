@@ -7,12 +7,12 @@ description: Upgrade Dart/Flutter packages, resolve warnings/errors, extract CHA
 
 このスキルは、Dart/Flutterパッケージのメジャーバージョンを含む一括アップグレードを行い、コードの自動修復・静的解析による検証を行い、変更点のCHANGELOGを pub.dev から抽出してAIが要約した上で、プルリクエスト（PR）を自動起票するスキルです。
 
-
 ## フロー
 
 1. **`dart-pub-upgrade` CLI スクリプトの実行**:
    - 実行コマンド: `(cd <path_to_skill>/scripts && dart pub get && dart run bin/dart_pub_upgrade.dart --path "$PWD/<path_to_project>")`
      - `<path_to_skill>`: 本 `SKILL.md` が配置されているディレクトリへの相対/絶対パス（例: `.skills/dart-pub-upgrade`）
+     - `<path_to_project>`: アップグレード対象の Dart プロジェクトが存在するサブディレクトリへの相対パス（例: `monoca_flutter`）
      - `<path_to_project>`: アップグレード対象の Dart プロジェクトが存在するディレクトリへの相対パス（ルート直下なら `.`、サブディレクトリならそのパス）
    - **スクリプトの全自動動作**:
      - `pubspec.lock` の差分からアップグレードされたパッケージを特定。
@@ -35,8 +35,8 @@ description: Upgrade Dart/Flutter packages, resolve warnings/errors, extract CHA
      件数が多くても「※ 詳細は pubspec.lock の差分をご参照ください」や「以下省略」といった記述で省略することは厳禁です。必ずすべてのパッケージを漏れなくPR本文に記録してください。
    - **直接依存と間接依存の分類**:
      JSON データ内の `"isDirect"` フラグ（`true` または `false`）に基づいて正確に分類してください。
-      - **直接依存 (`isDirect: true`)**: CHANGELOG の変更内容（特に「破壊的変更」「APIの変更」「重要な機能追加」）を個別に分析・要約し、各パッケージの CHANGELOG リンクを付与して詳細に記載します。
-      - **間接依存 (`isDirect: false`)**: 詳細な CHANGELOG 要約は省略して構いませんが、「パッケージ名 (旧バージョン ➔ 新バージョン) と CHANGELOG リンク」のリスト自体は100%すべて書き出してください。
+     - **直接依存 (`isDirect: true`)**: CHANGELOG の変更内容（特に「破壊的変更」「APIの変更」「重要な機能追加」）を個別に分析・要約し、各パッケージの CHANGELOG リンクを付与して詳細に記載します。
+     - **間接依存 (`isDirect: false`)**: 詳細な CHANGELOG 要約は省略して構いませんが、「パッケージ名 (旧バージョン ➔ 新バージョン) と CHANGELOG リンク」のリスト自体は100%すべて書き出してください。
    - **【リンクのフォーマット：必須ルール】**
      各パッケージの CHANGELOG リンクは、必ず以下の固定URLパターンで組み立ててください。
      ```
@@ -51,24 +51,30 @@ description: Upgrade Dart/Flutter packages, resolve warnings/errors, extract CHA
 
    ```markdown
    ## 概要
+
    <アップグレードの全体の概要や目的の簡潔な説明>
 
    ## 🚨 特に注目すべき重要な変更点
+
    <!-- 破壊的変更、メジャーアップデート、利便性が向上する重要な機能追加や主要な仕様変更などをハイライトします。特になければ「特になし」と記述 -->
+
    - **[<package_name>](https://pub.dev/packages/<package_name>/changelog)**: <注目すべき破壊的変更・新機能・主要変更の要約>
 
    ## 🛠️ 移行・対応内容
+
    - <dart fix による自動修正内容、手動で行ったコード修正ログ等>
 
    ## ⚠️ 手動対応・要確認が必要な点
+
    <!-- AIで確信を持って修正できず残した懸念点や、ユーザー側での手動確認・動作テストが必要な事項。なければ「なし」と記述 -->
+
    - <要確認項目>
 
    ## 📦 アップグレードされたパッケージ詳細
 
    ### 直接依存 (Direct dependencies)
 
-   * **[<package_name>](https://pub.dev/packages/<package_name>/changelog)** (<old_version> ➔ <new_version>)
+   - **[<package_name>](https://pub.dev/packages/<package_name>/changelog)** (<old_version> ➔ <new_version>)
      - <CHANGELOG要約・変更点1>
      - <CHANGELOG要約・変更点2>
 
@@ -84,7 +90,6 @@ description: Upgrade Dart/Flutter packages, resolve warnings/errors, extract CHA
      - **「手動対応・要確認が必要な点」が「なし」の場合**: `--draft` オプションを外して Ready for review（通常のPR）として起票します。
        - 実行コマンド: `env -u GITHUB_TOKEN -u GH_TOKEN gh pr create --title "chore(deps): パッケージの一括アップグレード (YYYY/MM/DD)" --body "<生成したテンプレート本文>"`
 
-
 6. **クリーンアップ**:
    - `<path_to_project>/.dart_tool/dart_pub_upgrade` ディレクトリなどの一時生成物を削除します。
 
@@ -93,4 +98,3 @@ description: Upgrade Dart/Flutter packages, resolve warnings/errors, extract CHA
      `PULL_REQUEST_URL: <作成されたPRのURL>`
    - パッケージの更新がなかった場合や PR が起票されなかった場合は、以下のように出力してください。
      `PULL_REQUEST_URL: none`
-
