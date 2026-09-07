@@ -140,8 +140,53 @@ Once the user confirms:
 5. Create GitHub Release:
    Save the notes to a temporary file, e.g., `/tmp/release_notes.md`, then:
    ```bash
-   gh release create ${TAG_PREFIX}$NEW_VERSION --title "${TAG_PREFIX}$NEW_VERSION" --notes-file /tmp/release_notes.md
+   env -u GITHUB_TOKEN -u GH_TOKEN gh release create ${TAG_PREFIX}$NEW_VERSION --title "${TAG_PREFIX}$NEW_VERSION" --notes-file /tmp/release_notes.md
    rm /tmp/release_notes.md
    ```
 
-Finally, report that the release is complete and that GitHub Actions will automatically handle pushing to `pub.dev`.
+### 6. Monitor & Verify pub.dev Publishing
+
+Do not stop after pushing the release. Actively monitor the automated publishing process until it completes, and promptly inform the user of the result:
+
+1. **Locate Workflow Run**:
+   After pushing the tag, GitHub Actions takes a few seconds to register the run. Query GitHub CLI to locate the run ID triggered for the release commit:
+   ```bash
+   COMMIT_SHA=$(git rev-parse HEAD)
+   RUN_ID=""
+   for i in {1..10}; do
+     RUN_ID=$(env -u GITHUB_TOKEN -u GH_TOKEN gh run list --workflow=publish.yml -c "$COMMIT_SHA" --json databaseId -q '.[0].databaseId')
+     if [ -n "$RUN_ID" ]; then
+       break
+     fi
+     sleep 3
+   done
+   ```
+   *(If `--workflow=publish.yml` does not yield results because a different workflow name or file is used, query without `--workflow`: `env -u GITHUB_TOKEN -u GH_TOKEN gh run list -c "$COMMIT_SHA" --json databaseId,workflowName -q '.[0].databaseId'`.)*
+
+2. **Watch Workflow Progress**:
+   Track the workflow run until it finishes:
+   ```bash
+   env -u GITHUB_TOKEN -u GH_TOKEN gh run watch "$RUN_ID" --exit-status
+   ```
+   - **If the workflow fails**: Immediately fetch the error logs and alert the user:
+     ```bash
+     env -u GITHUB_TOKEN -u GH_TOKEN gh run view "$RUN_ID" --log-failed
+     ```
+     Explain what failed (e.g., pub.dev authentication/OIDC, package verification error, or environment protection rules) and suggest how to resolve it.
+
+3. **Verify Package on pub.dev**:
+   Once the workflow succeeds, verify that pub.dev is serving the newly released version:
+   ```bash
+   PACKAGE_NAME=$(grep '^name:' pubspec.yaml | awk '{print $2}')
+   for i in {1..10}; do
+     STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://pub.dev/packages/$PACKAGE_NAME/versions/$NEW_VERSION")
+     if [ "$STATUS" = "200" ]; then
+       break
+     fi
+     sleep 3
+   done
+   ```
+
+4. **Notify the User**:
+   As soon as the release is verified on pub.dev, report the successful completion to the user along with the direct pub.dev link:
+   "🎉 Successfully published `$PACKAGE_NAME` v`$NEW_VERSION` to pub.dev: https://pub.dev/packages/$PACKAGE_NAME/versions/$NEW_VERSION"
