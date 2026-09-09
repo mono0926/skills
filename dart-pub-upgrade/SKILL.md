@@ -7,6 +7,7 @@ description: Upgrade Dart/Flutter packages, resolve warnings/errors, extract CHA
 
 このスキルは、Dart/Flutterパッケージのメジャーバージョンを含む一括アップグレードを行い、コードの自動修復・静的解析による検証を行い、変更点のCHANGELOGを pub.dev から抽出してAIが要約した上で、プルリクエスト（PR）を自動起票するスキルです。
 
+
 ## フロー
 
 1. **`dart-pub-upgrade` CLI スクリプトの実行**:
@@ -35,6 +36,8 @@ description: Upgrade Dart/Flutter packages, resolve warnings/errors, extract CHA
      件数が多くても「※ 詳細は pubspec.lock の差分をご参照ください」や「以下省略」といった記述で省略することは厳禁です。必ずすべてのパッケージを漏れなくPR本文に記録してください。
    - **直接依存と間接依存の分類**:
      JSON データ内の `"isDirect"` フラグ（`true` または `false`）に基づいて正確に分類してください。
+      - **直接依存 (`isDirect: true`)**: CHANGELOG の変更内容（特に「破壊的変更」「APIの変更」「重要な機能追加」）を個別に分析・要約し、各パッケージの CHANGELOG リンクを付与して詳細に記載します。
+      - **間接依存 (`isDirect: false`)**: 詳細な CHANGELOG 要約は省略して構いませんが、「パッケージ名 (旧バージョン ➔ 新バージョン) と CHANGELOG リンク」のリスト自体は100%すべて書き出してください。
      - **直接依存 (`isDirect: true`)**: CHANGELOG の変更内容（特に「破壊的変更」「APIの変更」「重要な機能追加」）を個別に分析・要約し、各パッケージの CHANGELOG リンクを付与して詳細に記載します。
      - **間接依存 (`isDirect: false`)**: 詳細な CHANGELOG 要約は省略して構いませんが、「パッケージ名 (旧バージョン ➔ 新バージョン) と CHANGELOG リンク」のリスト自体は100%すべて書き出してください。
    - **【リンクのフォーマット：必須ルール】**
@@ -74,6 +77,7 @@ description: Upgrade Dart/Flutter packages, resolve warnings/errors, extract CHA
 
    ### 直接依存 (Direct dependencies)
 
+   * **[<package_name>](https://pub.dev/packages/<package_name>/changelog)** (<old_version> ➔ <new_version>)
    - **[<package_name>](https://pub.dev/packages/<package_name>/changelog)** (<old_version> ➔ <new_version>)
      - <CHANGELOG要約・変更点1>
      - <CHANGELOG要約・変更点2>
@@ -90,6 +94,7 @@ description: Upgrade Dart/Flutter packages, resolve warnings/errors, extract CHA
      - **「手動対応・要確認が必要な点」が「なし」の場合**: `--draft` オプションを外して Ready for review（通常のPR）として起票します。
        - 実行コマンド: `env -u GITHUB_TOKEN -u GH_TOKEN gh pr create --title "chore(deps): パッケージの一括アップグレード (YYYY/MM/DD)" --body "<生成したテンプレート本文>"`
 
+
 6. **クリーンアップ**:
    - `<path_to_project>/.dart_tool/dart_pub_upgrade` ディレクトリなどの一時生成物を削除します。
 
@@ -98,3 +103,4 @@ description: Upgrade Dart/Flutter packages, resolve warnings/errors, extract CHA
      `PULL_REQUEST_URL: <作成されたPRのURL>`
    - パッケージの更新がなかった場合や PR が起票されなかった場合は、以下のように出力してください。
      `PULL_REQUEST_URL: none`
+
