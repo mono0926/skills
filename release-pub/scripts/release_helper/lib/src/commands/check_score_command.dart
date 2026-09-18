@@ -127,8 +127,17 @@ class CheckScoreCommand extends Command<int> {
       if (metricsJson != null) {
         final scorecard = metricsJson['scorecard'] as Map<String, dynamic>?;
         final analyzedVersion = scorecard?['packageVersion'] as String?;
+        final panaReport = scorecard?['panaReport'] as Map<String, dynamic>?;
+        final result = panaReport?['result'] as Map<String, dynamic>?;
+        final score = metricsJson['score'] as Map<String, dynamic>?;
 
-        if (targetVersion == null || analyzedVersion == targetVersion) {
+        final isTargetVersion =
+            targetVersion == null || analyzedVersion == targetVersion;
+        final hasScore =
+            (score?['maxPoints'] as int? ?? 0) > 0 ||
+            (result?['maxPoints'] as int? ?? 0) > 0;
+
+        if (isTargetVersion && hasScore) {
           logger.info(
             'Analysis retrieved for version: ${analyzedVersion ?? "unknown"}',
           );
@@ -160,15 +169,40 @@ class CheckScoreCommand extends Command<int> {
 
     // Process and display score results
     final score = metricsJson['score'] as Map<String, dynamic>?;
-    final grantedPoints = score?['grantedPoints'] as int? ?? 0;
-    final maxPoints = score?['maxPoints'] as int? ?? 0;
+    final scorecard = metricsJson['scorecard'] as Map<String, dynamic>?;
+    final panaReport = scorecard?['panaReport'] as Map<String, dynamic>?;
+    final report = panaReport?['report'] as Map<String, dynamic>?;
+    final result = panaReport?['result'] as Map<String, dynamic>?;
+    final sections =
+        (report?['sections'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ??
+        [];
+
+    final scoreGranted = score?['grantedPoints'] as int? ?? 0;
+    final scoreMax = score?['maxPoints'] as int? ?? 0;
+
+    final resultGranted = result?['grantedPoints'] as int? ?? 0;
+    final resultMax = result?['maxPoints'] as int? ?? 0;
+
+    final grantedPoints = scoreMax > 0 ? scoreGranted : resultGranted;
+    final maxPoints = scoreMax > 0 ? scoreMax : resultMax;
+
     final tags = (score?['tags'] as List<dynamic>?)?.cast<String>() ?? [];
 
-    final wasmReady = tags.contains('is:wasm-ready');
-    final platforms = tags
-        .where((t) => t.startsWith('platform:'))
-        .map((t) => t.replaceFirst('platform:', ''))
-        .toList();
+    final wasmReady =
+        tags.contains('is:wasm-ready') ||
+        sections.any(
+          (s) =>
+              (s['summary'] as String? ?? '').contains('**WASM-ready:**') ||
+              (s['summary'] as String? ?? '').contains(
+                'compatible with runtime `wasm`',
+              ),
+        );
+
+    final platforms =
+        tags
+            .where((t) => t.startsWith('platform:'))
+            .map((t) => t.replaceFirst('platform:', ''))
+            .toList();
 
     logger
       ..info('')
@@ -181,13 +215,6 @@ class CheckScoreCommand extends Command<int> {
       logger.info('Platforms:    ${platforms.join(", ")}');
     }
     logger.info('Score URL:    https://pub.dev/packages/$packageName/score');
-
-    final scorecard = metricsJson['scorecard'] as Map<String, dynamic>?;
-    final panaReport = scorecard?['panaReport'] as Map<String, dynamic>?;
-    final report = panaReport?['report'] as Map<String, dynamic>?;
-    final sections =
-        (report?['sections'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ??
-        [];
 
     final deductedSections = sections.where((s) {
       final sGranted = s['grantedPoints'] as int? ?? 0;
