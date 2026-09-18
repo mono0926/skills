@@ -9,11 +9,9 @@ import 'package:yaml_edit/yaml_edit.dart';
 typedef JsonFetcher = Future<Map<String, dynamic>?> Function(Uri uri);
 
 class CheckScoreCommand extends Command<int> {
-  CheckScoreCommand({
-    JsonFetcher? fetcher,
-    Duration? pollIntervalOverride,
-  })  : _fetcher = fetcher ?? _defaultFetcher,
-        _pollIntervalOverride = pollIntervalOverride {
+  CheckScoreCommand({JsonFetcher? fetcher, Duration? pollIntervalOverride})
+    : _fetcher = fetcher ?? _defaultFetcher,
+      _pollIntervalOverride = pollIntervalOverride {
     argParser
       ..addOption(
         'package',
@@ -167,11 +165,10 @@ class CheckScoreCommand extends Command<int> {
     final tags = (score?['tags'] as List<dynamic>?)?.cast<String>() ?? [];
 
     final wasmReady = tags.contains('is:wasm-ready');
-    final platforms =
-        tags
-            .where((t) => t.startsWith('platform:'))
-            .map((t) => t.replaceFirst('platform:', ''))
-            .toList();
+    final platforms = tags
+        .where((t) => t.startsWith('platform:'))
+        .map((t) => t.replaceFirst('platform:', ''))
+        .toList();
 
     logger
       ..info('')
@@ -192,12 +189,11 @@ class CheckScoreCommand extends Command<int> {
         (report?['sections'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ??
         [];
 
-    final deductedSections =
-        sections.where((s) {
-          final sGranted = s['grantedPoints'] as int? ?? 0;
-          final sMax = s['maxPoints'] as int? ?? 0;
-          return sGranted < sMax;
-        }).toList();
+    final deductedSections = sections.where((s) {
+      final sGranted = s['grantedPoints'] as int? ?? 0;
+      final sMax = s['maxPoints'] as int? ?? 0;
+      return sGranted < sMax;
+    }).toList();
 
     if (deductedSections.isNotEmpty) {
       logger
