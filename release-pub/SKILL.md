@@ -195,6 +195,41 @@ Do not stop after pushing the release. Actively monitor the automated publishing
    done
    ```
 
-4. **Notify the User**:
-   As soon as the release is verified on pub.dev, report the successful completion to the user along with the direct pub.dev link:
-   "🎉 Successfully published `$PACKAGE_NAME` v`$NEW_VERSION` to pub.dev: https://pub.dev/packages/$PACKAGE_NAME/versions/$NEW_VERSION"
+4. **Check pub.dev Score (Pana Analysis)**:
+   Pub.dev automatically runs pana analysis upon publishing. Check the score and wait for the analysis of the new version to finish (typically 1–3 minutes). Poll the metrics API:
+
+   ```bash
+   PACKAGE_NAME=$(grep '^name:' pubspec.yaml | awk '{print $2}')
+   # Poll until the newly released version has been analyzed by pub.dev
+   for i in {1..30}; do
+     ANALYZED_VERSION=$(curl -s "https://pub.dev/api/packages/$PACKAGE_NAME/metrics" | jq -r '.scorecard.packageVersion // empty')
+     if [ "$ANALYZED_VERSION" = "$NEW_VERSION" ]; then
+       break
+     fi
+     sleep 10
+   done
+   ```
+
+   Once analyzed, fetch the detailed score:
+   ```bash
+   SCORE_JSON=$(curl -s "https://pub.dev/api/packages/$PACKAGE_NAME/metrics")
+   GRANTED_POINTS=$(echo "$SCORE_JSON" | jq -r '.score.grantedPoints')
+   MAX_POINTS=$(echo "$SCORE_JSON" | jq -r '.score.maxPoints')
+   ```
+
+   - **If full score (`$GRANTED_POINTS == $MAX_POINTS`)**:
+     Confirm all sections passed and tags (such as `is:wasm-ready`) are in place.
+   - **If score is deducted (`$GRANTED_POINTS < $MAX_POINTS`)**:
+     Extract and display the deducting sections and summaries:
+     ```bash
+     echo "$SCORE_JSON" | jq -r '.scorecard.panaReport.report.sections[] | select(.grantedPoints < .maxPoints) | "### \(.title) (\(.grantedPoints)/\(.maxPoints))\n\(.summary)\n"'
+     ```
+     Alert the user with the exact deductions so they can be addressed promptly.
+
+5. **Notify the User**:
+   Report the successful publication along with the pub.dev score:
+   - Pub.dev Version: `https://pub.dev/packages/$PACKAGE_NAME/versions/$NEW_VERSION`
+   - Pub.dev Score: `https://pub.dev/packages/$PACKAGE_NAME/score`
+   - Score Result:
+     - Full score: e.g. "🎉 **Pub Score: $GRANTED_POINTS / $MAX_POINTS** (Full points!)"
+     - Deducted score: e.g. "⚠️ **Pub Score: $GRANTED_POINTS / $MAX_POINTS**" along with the detailed causes of deduction.
