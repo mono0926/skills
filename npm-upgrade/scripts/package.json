@@ -1,0 +1,13 @@
+{
+  "name": "npm-upgrade-helper",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Helper script for npm-upgrade skill",
+  "bin": {
+    "npm-upgrade": "./bin/npm-upgrade.mjs"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT"
+}
