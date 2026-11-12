@@ -122,10 +122,14 @@ Flutter 3.50 / Dart 3.14（2026年11月リリース）へのプロジェクト�
 
 ---
 
-### Step 3: 自動修復 & 依存関係の更新
+### Step 3: 依存関係の更新 & 自動修復（実行順序に注意！）
 
 1. `flutter pub get`（Melos の場合は `melos bs`）を実行。
-2. `dart fix --apply`（Melos の場合は `melos run fix`）を実行して機械的修正（`unnecessary_ignore` の除去等を含む）を適用。
+2. **【重要】`dart fix --apply` 実行前の注意事項**:
+   - Flutter 3.50 では、`package:flutter/material.dart` 等に `@Deprecated` が付与されたため、**オプションなしの通常の `dart fix --apply` を実行しただけでも `deprecated_member_use` として `package:material_ui/material_ui.dart` への書き換えと `pubspec.yaml` への `material_ui: any` 追加が自動発動**します。
+   - したがって、サードパーティ依存の都合で `material_ui` 移行を保留する場合は、**先に Step 4 の方針確認と限定 `// ignore: deprecated_member_use` の付与を済ませてから** `dart fix --apply` を実行すること。
+   - また、Pub Workspace 構成の Melos モノレポで `melos exec "dart fix --apply"` を並列実行すると同一ファイルへの競合書き込みによる破損が起きるため、必ずワークスペースルートで単一の `dart fix --apply` を実行すること（`melos` スクリプト定義も `fix: dart fix --apply` とするのが安全）。
+3. `dart fix --apply` を実行して機械的修正（`unnecessary_ignore` の除去等を含む）を適用。
 
 ---
 
