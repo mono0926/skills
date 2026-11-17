@@ -45,14 +45,13 @@ description: Generate a dedicated Flutter upgrade skill (e.g. flutter-upgrade-3-
 
 1. **一次情報・公式リファレンスURL一覧**:
    - What's New ブログ、Release Notes、Breaking Changes、Dart ブログなどの固定直リンクを収集。
-2. **`environment` (sdk, flutter) caret指定バージョン下限更新方針**:
-   - 通常プロジェクト: `pubspec.yaml` の `environment` 指定 (例: `sdk: "^3.13.0"`, `flutter: "^3.47.0"`) の更新。
-   - Melos モノレポ: ルート `pubspec.yaml` の `melos.bootstrap.environment` 指定の更新。
-   - その後 `melos bs` で配下全パッケージの指定を一括適用・更新する手順。
+2. **`environment` (sdk, flutter) caret指定バージョン下限更新方針 (`dart migrate` 活用)**:
+   - 通常プロジェクト / Pub Workspace: `dart migrate --dry-run --target-sdk=<DART_VERSION>` で事前確認後、`dart migrate --apply --target-sdk=<DART_VERSION>`（`prepare` + `bump`）で `pubspec.yaml` の `sdk: "^<DART_VERSION>"` への引き上げと事前コード修正を一括実施し、`flutter: "^<VERSION>.0"` も合わせて更新。
+   - Melos モノレポ: ルート `pubspec.yaml`（または `melos.yaml`）の `melos.command.bootstrap.environment` / `melos.bootstrap.environment` 指定の更新と `melos bs` による配下全パッケージへの一括適用・更新手順。
 3. **`flutter create .` テンプレート差分・標準構成**:
    - 当該バージョンで推奨される設定ファイル記述 (`analysis_options.yaml`, Android Gradle Plugin / Kotlin / Gradle バージョン, iOS Xcode / Podfile 設定, Web構成など)。
 4. **自動修正コマンド & オプトイン/ベータ機能 (Migration code)**:
-   - 例: `dart fix --apply --code=migrate_design_widgets`
+   - 例: `dart migrate --apply --step=cleanup --target-sdk=<DART_VERSION>`（新SDK機能・記法を採用するオプショナルな修正）や `dart fix --apply --code=migrate_design_widgets`
    - 各オプトイン/ベータ機能について以下を整理：
      - **概要・何が変わるか**
      - **メリット**
@@ -75,7 +74,7 @@ description: Generate a dedicated Flutter upgrade skill (e.g. flutter-upgrade-3-
 ```markdown
 ---
 name: flutter-upgrade-<major>-<minor>
-description: Upgrade a Flutter project to Flutter <VERSION> (e.g. 3.47). Includes official reference URLs (What's new blog, release notes, breaking changes). Handles cases whether Flutter SDK is already upgraded to <VERSION> or not. Follows latest flutter create template defaults, updates pubspec.yaml environment SDK & Flutter bounds with caret notation (^3.13.0 & ^3.47.0), configures melos.bootstrap.environment & runs melos bs if applicable, applies dart fixes, prompts for opt-in migration tools, warns about runtime breaking changes, and creates a detailed Pull Request.
+description: Upgrade a Flutter project to Flutter <VERSION> (e.g. 3.47). Includes official reference URLs (What's new blog, release notes, breaking changes). Handles cases whether Flutter SDK is already upgraded to <VERSION> or not. Follows latest flutter create template defaults, updates pubspec.yaml environment SDK & Flutter bounds with caret notation (^3.13.0 & ^3.47.0) via dart migrate or melos.bootstrap.environment, applies dart fixes, prompts for opt-in migration tools, warns about runtime breaking changes, and creates a detailed Pull Request.
 ---
 
 # flutter-upgrade-<major>-<minor>
@@ -111,16 +110,19 @@ description: Upgrade a Flutter project to Flutter <VERSION> (e.g. 3.47). Include
 - **Draft PR起票**: `env -u GITHUB_TOKEN -u GH_TOKEN gh pr create --draft ...` または空コミット起票による Draft PR 作成。
 
 ### 2. `environment` バージョン更新 & `flutter create .` 最新テンプレートへの追従
-- **通常プロジェクトの場合**:
-  - `pubspec.yaml` の `environment` 指定 (sdk, flutter ともに caret 指定 `^`) の更新 (例: `sdk: "^<DART_VERSION>"`, `flutter: "^<VERSION>.0"`).
+- **`dart migrate` による事前確認**:
+  - ワークスペースルート（またはパッケージルート）で `dart migrate --dry-run --target-sdk=<DART_VERSION>` を実行し、必要な事前修正（`prepare`）やクリーンアップ候補（`cleanup`）を確認する（Pub Workspace の場合はサブパッケージ個別ではなくワークスペースルートで実行）。
+- **通常プロジェクト / Pub Workspace の場合**:
+  - `dart migrate --apply --target-sdk=<DART_VERSION>`（`prepare` + `bump`）を実行して `environment.sdk` を `"^<DART_VERSION>"` へ引き上げ、あわせて `pubspec.yaml` の `environment.flutter` を `"^<VERSION>.0"` に更新する。
 - **モノレポ (`Melos`) プロジェクトの場合**:
-  - ルート `pubspec.yaml` の `melos.bootstrap.environment` に以下を設定：
+  - ルート `pubspec.yaml`（または `melos.yaml`）の `melos.command.bootstrap.environment`（または `melos.bootstrap.environment`）に以下を設定：
     ```yaml
     melos:
-      bootstrap:
-        environment:
-          sdk: "^<DART_VERSION>"
-          flutter: "^<VERSION>.0"
+      command:
+        bootstrap:
+          environment:
+            sdk: "^<DART_VERSION>"
+            flutter: "^<VERSION>.0"
     ```
   - その後 `melos bs` (`melos bootstrap`) を実行して、各パッケージの `environment` 指定を一括自動適用・更新。
 - **`flutter create .` テンプレート差分追従**:
@@ -128,13 +130,17 @@ description: Upgrade a Flutter project to Flutter <VERSION> (e.g. 3.47). Include
   - `analysis_options.yaml`, `android/` (Gradle Plugin, Kotlin), `ios/` (Xcode, Podfile), `web/` の最新テンプレートへのキャッチアップ。
 
 ### 3. 自動修復とパッケージ依存関係
-- `flutter pub get` （Melosの場合は `melos bs` / `melos exec -- flutter pub get`）の実行
-- `dart fix --apply` による機械的修正の適用
+- `flutter pub get` （Melosの場合は `melos bs` / `melos exec -- flutter pub get`）を先に実行し、`.dart_tool/package_config.json` を最新化する
+- `dart migrate --apply --target-sdk=<DART_VERSION>`（未実行の場合）および `dart fix --apply` による機械的修正の適用
 
 ### 4. オプトイン / ベータ機能 / Migration Fix の対話選択
 ユーザーへ `ask_question` または明確な対話により、以下の移行コード/機能の適用可否をヒアリングする。
 
 [バージョン固有のオプトイン機能一覧]
+- **`dart migrate --apply --step=cleanup --target-sdk=<DART_VERSION>`**:
+  - **メリット**: 新しい Dart SDK バージョンの機能・記法を採用したオプショナルなクリーンアップを自動適用できる。
+  - **デメリット**: 変更範囲が広がるため差分確認が必要。
+  - **推奨度**: (任意 / 推奨)
 - **機能/コード**: 例: `dart fix --apply --code=...`
   - **メリット**: ...
   - **デメリット**: ...
@@ -160,5 +166,5 @@ description: Upgrade a Flutter project to Flutter <VERSION> (e.g. 3.47). Include
 
 1. `/Users/mono/Git/skills/flutter-upgrade-<major>-<minor>/SKILL.md` が正常に生成されていること。
 2. 対象バージョンの公式リファレンスURL群（What's New ブログ・Release Notes・Breaking Changes 等）が埋め込まれていること。
-3. `pubspec.yaml` の `environment` 指定 (sdk, flutter ともに caret 指定 `^` による引き上げ) および Melos プロジェクトでの `melos.bootstrap.environment` 設定と `melos bs` 一括反映手順が含まれていること。
+3. `dart migrate`（`--dry-run` / `--apply` による `environment.sdk` 更新と事前修正、および `--step=cleanup` のオプトイン手順）と `environment.flutter` の caret 指定引き上げ、ならびに Melos プロジェクトでの `melos.command.bootstrap.environment` 設定と `melos bs` 一括反映手順が含まれていること。
 4. リリースノート・Breaking Changes・`flutter create` テンプレート更新点・オプトイン機能のメリット/デメリット・動作変化注意点が網羅されていること。
