@@ -12,4 +12,5 @@ trigger: always_on
   - それぞれのSkillsのドキュメント・ソースコードのコメント・SKILL.mdなど)
   - 英語にするべきSkillsを列挙する
     - dart-cli-creator
+    - macos-local-ai
     - release-pub

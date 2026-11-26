@@ -5,6 +5,7 @@
 - [dart-package-skill-creator](dart-package-skill-creator/SKILL.md): Dart/Flutter公式のSkills CLI 1.0仕様に準拠したパッケージ同梱用AI Agent Skillの作成・監査・改善スキル
 - [dart-pub-upgrade](dart-pub-upgrade/SKILL.md): Dart/Flutterパッケージのメジャーバージョン一括アップグレード・自動修復・CHANGELOG要約・PR起票スキル
 - [flutter-golden-test](flutter-golden-test/SKILL.md): Flutterにおける決定論的なGolden UI Test（alchemist）の導入・運用ガイド
+- [macos-local-ai](macos-local-ai/SKILL.md): macOSネイティブAPI・オンデバイスAI（Vision / SpeechAnalyzer / Translation / FoundationModels / 標準CLI）を品質劣化ゼロの領域で活用するオフロードスキル
 - [npm-upgrade](npm-upgrade/SKILL.md): Node.js/Cloud Functionsパッケージのメジャー一括アップグレード・CHANGELOG要約・マージ時デプロイ担保・PR起票スキル
 
 
