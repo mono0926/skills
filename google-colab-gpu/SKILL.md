@@ -21,7 +21,13 @@ Use this skill to decide **when** to offload compute to Google Colab, **which GP
 | **Open OCR / layout / VLM benchmarks** (e.g., YomiToku, PaddleOCR, Surya, open VLMs) | **Colab GPU** (`L4` / `A100` / `G4 96GB`) | Easy apples-to-apples comparison before committing to cloud GPU hosting or on-device export. |
 | **High-VRAM media generation** (video/image/TTS models requiring 24–96 GB VRAM) | **Colab GPU** (`A100 80GB` / `G4 96GB`) | Exceeds consumer GPU memory; avoids per-minute third-party GPU billing when covered by a Google AI plan. |
 | **Lightweight local tasks** (printed PDF OCR, quick analysis, Flutter/Xcode builds, unit tests) | **Local Machine** (e.g., `macos-local-ai`) | Zero startup latency, zero CU burn, native OS APIs, and strict local privacy. |
-| **Complex reasoning & production app inference** (nuanced grading, pedagogy/hints, live user APIs) | **Frontier Cloud API** (e.g., Gemini API / Server Prompt Templates) | Never use Colab as a production API server; do not replace frontier reasoning with self-hosted LLMs unless explicitly justified. |
+| **Task-specific lightweight models** (dedicated CoreML / LiteRT / ONNX classifiers, erasers, crop/deskew detectors) | **Colab GPU → On-Device / Local Export** | Always consider training a dedicated lightweight model when it beats cloud calls in production app speed, accuracy, and zero-cost/offline UX (or cleanly boosts agent-side tooling without accuracy loss). |
+| **Complex reasoning & production app inference** (nuanced grading, pedagogy/hints, live user APIs) | **Frontier Cloud API** (e.g., Gemini API / Server Prompt Templates) | Never use Colab as a production API server; do not compromise agent-side accuracy just to save AI cost. |
+
+> [!IMPORTANT]
+> **Decision Priority & Agent-Side Accuracy Guardrail**:
+> - **Production App First**: Evaluate custom lightweight models primarily on end-to-end production advantages (latency, offline/free-tier UX, accuracy, and recurring API cost reduction).
+> - **Agent-Side Accuracy Non-Compromise**: When considering lightweight/local models for coding/evaluation agent workflows, **never compromise accuracy**. Cost reduction alone is not a goal; adopt lightweight replacements for agent tasks only when accuracy is strictly preserved or improved alongside better speed/cost.
 
 ---
 
