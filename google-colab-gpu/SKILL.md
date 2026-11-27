@@ -70,3 +70,26 @@ Colab CU burn rates vary dynamically by accelerator and RAM profile, and granted
 - **No raw PII or copyrighted scans in cloud runtimes**: Avoid uploading personal photos, student/customer records, or copyrighted commercial scans to Colab or Google Drive.
 - **Prefer synthetic or public datasets**: Generate clean synthetic training/benchmark pairs (e.g., programmatic PDF/image rendering + synthetic augmentations) or use properly licensed public datasets.
 - **Keep weights & datasets out of Git**: Store only reproducible notebooks, training scripts, and evaluation configs in version control; keep large datasets and model checkpoints in `.gitignore`d or external artifact storage.
+
+---
+
+## 5. Mandatory Usage & Compute Unit (CU) Accounting Report
+
+For every Colab job, capture real measurements **before provisioning** and **after tearing down** the runtime, and include a concise usage summary in your final report:
+
+1. **Before starting** (`colab usage` / MCP `get_subscription`): record the starting CU balance and start timestamp.
+   ```bash
+   colab usage   # add --auth=oauth2 or --auth=adc as configured
+   ```
+2. **During execution** (optional check for active burn rate): `colab usage` also reports `Usage rate: X.XX/hr` and `Active assignments`.
+3. **After stopping** (`colab stop` / `delete_runtime`): run `colab sessions` (confirm zero lingering assignments) and `colab usage` again to record the ending CU balance and elapsed wall-clock time.
+4. **Report format** (always report observed figures; never fabricate numbers — if Colab billing lag produces `0.00` delta on a very short run, state the observed balance as-is and separately show `rate × duration` as an estimate):
+
+| Item | Value |
+| :--- | :--- |
+| **Workload** | `<task summary>` |
+| **Runtime / Hardware** | `<GPU/TPU/CPU + Shape, e.g., L4 Standard>` |
+| **Duration** | `<wall-clock duration, e.g., 14m 20s>` |
+| **Usage Rate** | `<observed rate, e.g., 2.33 CU/hr>` |
+| **CU Balance (Before → After)** | `<before> CU → <after> CU (Δ <delta> CU)` |
+| **Sessions After Stop** | `0 active` (verified via `colab sessions`) |
